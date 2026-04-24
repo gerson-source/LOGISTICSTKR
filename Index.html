@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GA Tracker">
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f3" media="(prefers-color-scheme: light)">
+<link rel="manifest" href="/manifest.json">
+<title>GA Delivery Planner</title>
+<title>GA Delivery Planner</title>
+<style>
+@media print {
+  body > *:not(#print-shell) { display: none !important; }
+  #print-shell { display: flex !important; align-items: center; justify-content: center; min-height: 100vh; }
+}
+#print-shell { display: none; }
+:root{
+  --bg:#f5f5f3;--surface:#fff;--border:#e0e0e0;--border2:#f0f0ee;
+  --text:#1a1a1a;--text2:#555;--text3:#888;--text4:#aaa;
+  --accent:#378ADD;--accent-bg:#EBF4FD;
+  --btn-bg:#1a1a1a;--btn-text:#fff;
+  --head-bg:#f9f9f7;--input-bg:#fff;
+  --warn-bg:#FAEEDA;--warn-text:#633806;
+  --ok-bg:#EAF3DE;--ok-text:#27500A;
+  --att-bg:#EDE9FE;--att-text:#5B21B6;
+  --tool-bg:#E0F7FA;--tool-text:#006064;
+  --cond-bg:#FEF3C7;--cond-text:#92400E;--cond-border:#FDE68A;
+}
+body.dark{
+  --bg:#0f0f0f;--surface:#1a1a1a;--border:#2a2a2a;--border2:#222;
+  --text:#f0f0ee;--text2:#aaa;--text3:#666;--text4:#444;
+  --accent:#5BA3E8;--accent-bg:#1a2a3a;
+  --btn-bg:#f0f0ee;--btn-text:#1a1a1a;
+  --head-bg:#141414;--input-bg:#222;
+  --warn-bg:#2a1a00;--warn-text:#EF9F27;
+  --ok-bg:#0a1f0a;--ok-text:#6BCB77;
+  --q-bg:#0a1a2a;--q-text:#5BA3E8;
+  --att-bg:#1a0a2a;--att-text:#A78BFA;
+  --tool-bg:#001a1f;--tool-text:#22D3EE;
+  --cond-bg:#1f1500;--cond-text:#FCD34D;--cond-border:#78450a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;
+  transition:background .2s,color .2s;
+  padding-top:env(safe-area-inset-top);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a1a;font-size:14px}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1rem}
+.main-grid{display:grid;grid-template-columns:1fr 380px;gap:1rem;align-items:start}
+.left-col{min-width:0}
+.right-col{display:flex;flex-direction:column;gap:1rem;position:sticky;top:1rem}
+.panel-box{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--head-bg);border-bottom:1px solid var(--border)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f9f9f7;border-bottom:1px solid #e0e0e0}
+.panel-head-title{font-size:13px;font-weight:600}
+.panel-body{padding:10px}
+.eq-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;margin-bottom:6px;display:flex;align-items:flex-start;gap:8px}
+.eq-card:hover{background:var(--head-bg)}
+.eq-card.selected{border-color:var(--accent);background:var(--accent-bg)}
+.att-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.q-card{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px}flex;align-items:flex-start;gap:8px}
+.eq-card:hover{background:#f9f9f7}
+.eq-card.selected{border-color:#378ADD;background:#EBF4FD}
+.att-card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.q-card{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:9px 12px;margin-bottom:6px}
+.q-card.queued{border-left:3px solid #378ADD}
+.q-card.transit{border-left:3px solid #EF9F27}
+.q-card.att-move{border-left:3px solid #7C3AED}
+.q-card.tool-move{border-left:3px solid #0891b2}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surface);border-radius:10px 10px 0 0;overflow:hidden;margin-bottom:1rem}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--text3);border-bottom:3px solid transparent;font-family:inherit}
+.tab.active{color:var(--text);border-bottom-color:var(--text);background:var(--head-bg)}em}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:#666;border-bottom:3px solid transparent;font-family:inherit}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;background:#f9f9f7}
+.tabpanel{display:none}.tabpanel.active{display:block}
+.bdg{display:inline-block;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+.bg-gray{background:#f0f0ee;color:#555}
+.bg-moved{background:#EAF3DE;color:#27500A}
+.bg-q{background:#E6F1FB;color:#0C447C}
+.bg-tr{background:#FAEEDA;color:#633806}
+.bg-done{background:#EAF3DE;color:#27500A}
+.bg-rental{background:#F3E8FF;color:#5B21B6}
+.bg-attmove{background:#EDE9FE;color:#5B21B6}
+.bg-toolmove{background:#E0F7FA;color:#006064}
+.bg-inuse{background:#EAF3DE;color:#27500A}
+.bg-avail{background:#f0f0ee;color:#444}
+.bg-pending{background:#f0f0ee;color:#888;font-style:italic}
+.att-pill{display:inline-block;font-size:10px;padding:1px 6px;border-radius:6px;background:#EEEDFE;color:#3C3489;margin:2px 2px 0 0}
+.form-inner{padding:12px}
+label{font-size:12px;color:#666;display:block;margin-bottom:4px;margin-top:10px}
+select,input[type=text],textarea{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;font-family:inherit;background:var(--input-bg);color:var(--text)}:inherit;background:#fff}
+textarea{resize:vertical;min-height:60px}
+.btn{display:block;width:100%;padding:9px;background:var(--btn-bg);color:var(--btn-text);border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;margin-top:12px;font-family:inherit}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-sm{padding:4px 10px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit}
+.btn-sm:hover{background:var(--border2)}
+.btn-sm.primary{background:var(--btn-bg);color:var(--btn-text);border-color:var(--btn-bg);font-weight:500}
+.btn-outline{display:block;width:100%;padding:9px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-outline:hover{background:var(--head-bg)}t:500;cursor:pointer;margin-top:12px;font-family:inherit}
+.btn:hover{background:#333}
+.btn:disabled{background:#888;cursor:not-allowed}
+.btn-sm{padding:4px 10px;font-size:12px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-family:inherit}
+.btn-sm:hover{background:#f0f0ee}
+.btn-sm.primary{background:#1a1a1a;color:#fff;border-color:#1a1a1a;font-weight:500}
+.btn-outline{display:block;width:100%;padding:9px;background:#fff;color:#1a1a1a;border:1px solid #ddd;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-outline:hover{background:#f5f5f3}
+.warn-box{font-size:12px;background:var(--warn-bg);color:var(--warn-text);border-radius:6px;padding:8px 10px;margin-top:8px}
+.detail-box{background:var(--head-bg);border-radius:8px;padding:10px;margin-bottom:10px}
+.detail-box{background:#f5f5f3;border-radius:8px;padding:10px;margin-bottom:10px}
+.empty-msg{text-align:center;color:#888;font-size:13px;padding:2rem 0}
+.move-row{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px}
+.site-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.inbound-box{font-size:12px;color:var(--q-text);background:var(--q-bg);border-radius:4px;padding:5px 10px;margin-top:6px}
+.site-card{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:8px}
+.inbound-box{font-size:12px;color:#0C447C;background:#E6F1FB;border-radius:4px;padding:5px 10px;margin-top:6px}
+.sync-ok{color:#3B6D11;font-size:12px;font-weight:500}
+.sync-err{color:#c0392b;font-size:12px}
+.sync-neutral{color:#888;font-size:12px}
+.sync-saving{color:#B45309;font-size:12px;font-weight:500}
+.live-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#3B6D11;margin-right:4px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.log-scroll{max-height:300px;overflow-y:auto;padding:10px}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:20px;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.3);max-height:90vh;overflow-y:auto}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:20px;width:380px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18);max-height:90vh;overflow-y:auto}
+.modal h2{font-size:16px;font-weight:600;margin-bottom:14px}
+.modal-footer{display:flex;gap:8px;margin-top:14px}
+.modal-footer .btn,.modal-footer .btn-outline{margin-top:0}
+.pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.pill{padding:4px 11px;font-size:12px;font-weight:500;border-radius:20px;border:1px solid #ddd;background:#fff;cursor:pointer;font-family:inherit;color:#555;white-space:nowrap}
+.pill:hover{background:#f0f0ee}
+.pill.active{background:#1a1a1a;color:#fff;border-color:#1a1a1a}
+.status-toggle{padding:2px 8px;font-size:11px;border-radius:10px;font-weight:500;cursor:pointer;border:none;font-family:inherit;white-space:nowrap}
+.status-toggle.inuse{background:#EAF3DE;color:#27500A}
+.status-toggle.avail{background:#f0f0ee;color:#555}
+.cond-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 7px;border-radius:10px;background:var(--cond-bg);color:var(--cond-text);border:1px solid var(--cond-border);cursor:pointer;font-weight:500;margin:2px 0 0}
+.cond-badge:hover{opacity:.85}
+.cond-preset{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.cond-preset button{padding:4px 10px;font-size:11px;border:1px solid var(--border);border-radius:14px;background:var(--surface);cursor:pointer;font-family:inherit;color:var(--text2)}
+.cond-preset button:hover{background:var(--head-bg)}
+.rename-btn{background:var(--head-bg);border:1px solid var(--border);cursor:pointer;padding:4px 9px;font-size:14px;color:var(--text2);line-height:1;border-radius:6px;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.rename-btn:hover,.rename-btn:active{background:var(--border);color:var(--text)};color:#92400E;border:1px solid #FDE68A;cursor:pointer;font-weight:500;margin:2px 0 0}
+.cond-badge:hover{background:#FDE68A}
+.cond-preset{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.cond-preset button{padding:4px 10px;font-size:11px;border:1px solid #ddd;border-radius:14px;background:#fff;cursor:pointer;font-family:inherit;color:#555}
+.cond-preset button:hover{background:#f0f0ee;border-color:#aaa}
+.rename-btn{background:#f0f0ee;border:1px solid #ddd;cursor:pointer;padding:4px 9px;font-size:14px;color:#555;line-height:1;border-radius:6px;flex-shrink:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.rename-btn:hover,.rename-btn:active{background:#e0e0de;color:#111}
+.panel-body.collapsed{display:none}
+.collapse-toggle{cursor:pointer;user-select:none;font-size:11px;color:#999;padding:2px 4px;border-radius:4px;margin-left:4px}
+.collapse-toggle:hover{color:#444;background:#f0f0ee}
+/* ── MOBILE OVERHAUL ──────────────────────────────────────────── */
+@media (max-width: 720px) {
+
+  /* Layout */
+  .main-grid {
+    grid-template-columns: 1fr;
+    gap: .75rem;
+  }
+  .right-col {
+    position: static;
+    order: -1; /* "Plan a move" slides ABOVE the list on mobile */
+  }
+  .left-col { order: 0; }
+  .wrap { padding: .75rem .75rem; padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)); }
+
+  /* Header — compact for PWA */
+  .wrap > div:first-child h1 { font-size: 17px; }
+  .wrap > div:first-child { margin-bottom: .6rem; }
+
+  /* Tabs — horizontal scroll, no wrap */
+  .tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    flex-wrap: nowrap;
+    border-radius: 10px 10px 0 0;
+    scrollbar-width: none;
+    margin-bottom: .75rem;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    padding: 11px 18px;
+    font-size: 13px;
+    min-height: 44px; /* a11y tap target */
+  }
+
+  /* Pills — horizontal scroll strip */
+  .pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+  .pills::-webkit-scrollbar { display: none; }
+  .pill {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    font-size: 13px;
+    min-height: 38px;
+  }
+
+  /* Cards — bigger tap area */
+  .eq-card, .att-card, .q-card {
+    padding: 12px 12px;
+    margin-bottom: 8px;
+  }
+  .eq-card { gap: 10px; }
+
+  /* Buttons — proper tap targets */
+  .btn {
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 10px;
+    margin-top: 14px;
+  }
+  .btn-sm {
+    padding: 9px 14px;
+    font-size: 13px;
+    min-height: 38px;
+    border-radius: 8px;
+  }
+  .btn-outline {
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 10px;
+  }
+  .rename-btn {
+    padding: 8px 12px;
+    font-size: 16px;
+    min-width: 38px;
+    min-height: 38px;
+  }
+
+  /* Forms */
+  select, input[type=text], textarea {
+    padding: 11px 12px;
+    font-size: 15px; /* prevents iOS zoom-in on focus */
+    border-radius: 8px;
+  }
+  label {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+  .form-inner { padding: 14px; }
+
+  /* Panel heads */
+  .panel-head { padding: 12px 14px; }
+  .panel-head-title { font-size: 14px; }
+
+  /* Log scroll — shorter on mobile */
+  .log-scroll { max-height: 200px; }
+  .panel-box .log-scroll { max-height: 180px; }
+
+  /* Move rows */
+  .move-row { padding: 12px 12px; margin-bottom: 8px; }
+
+  /* Site cards */
+  .site-card { padding: 14px; }
+
+  /* Modal — full-width bottom sheet feel */
+  .modal {
+    width: 100%;
+    max-width: 100vw;
+    border-radius: 18px 18px 0 0;
+    margin-top: auto;
+    padding: 20px 18px;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .modal-bg.open {
+    align-items: flex-end; /* slides up from bottom */
+  }
+  .modal-footer {
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .modal h2 { font-size: 17px; margin-bottom: 16px; }
+
+  /* Status toggle tap target */
+  .status-toggle {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  /* Condition badge */
+  .cond-badge { font-size: 11px; padding: 4px 9px; }
+
+  /* Sites filter row */
+  #tabpanel-sites > div:first-child {
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  /* Add buttons row */
+  .left-col > div:first-child .btn-sm {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+
+  /* Collapse toggle — bigger hit area */
+  .collapse-toggle {
+    padding: 6px 8px;
+    font-size: 14px;
+  }
+}
+
+/* Very small screens (iPhone SE etc.) */
+@media (max-width: 375px) {
+  .tab { padding: 11px 13px; font-size: 12px; }
+  .wrap { padding: .6rem .6rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+  <div>
+    <h1 style="font-size:20px;font-weight:600;margin-bottom:2px">GA Delivery Planner</h1>
+    <div style="font-size:12px;color:#888;margin-bottom:3px" id="hdr-date"></div>
+    <div id="sync-st" class="sync-neutral">Connecting to database…</div>
+  </div>
+  <div style="display:flex;gap:6px;margin-top:4px">
+    <button class="btn-sm" id="dark-toggle" onclick="toggleDark()" style="font-size:16px;padding:4px 8px" title="Toggle dark mode">🌙</button>
+    <button class="btn-sm" onclick="loadAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="goTab('equip',this)">Equipment</button>
+  <button class="tab" onclick="goTab('tools',this)">Tools</button>
+  <button class="tab" onclick="goTab('attach',this)">Attachments</button>
+  <button class="tab" onclick="goTab('sites',this)">Sites</button>
+</div>
+
+<!-- EQUIPMENT TAB -->
+<div id="tabpanel-equip" class="tabpanel active">
+  <div class="main-grid">
+    <div class="left-col">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-sm" style="flex:1" onclick="openAddModal('eq')">+ Add equipment</button>
+      </div>
+      <div class="pills" id="eq-pills"></div>
+      <div id="eq-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+    <div class="right-col">
+      <div class="panel-box">
+        <div class="panel-head"><span class="panel-head-title">Plan a move</span></div>
+        <div class="form-inner">
+          <div id="sel-empty" class="empty-msg" style="padding:1.5rem 0">Select a machine</div>
+          <div id="sel-detail" style="display:none">
+            <div class="detail-box">
+              <div style="font-size:13px;font-weight:600" id="sn"></div>
+              <div style="font-size:12px;color:#666;margin-top:2px" id="sl"></div>
+              <div style="font-size:12px;color:#888;margin-top:1px" id="sm"></div>
+              <div id="sa" style="margin-top:6px"></div>
+            </div>
+            <div id="aw" class="warn-box" style="display:none"></div>
+            <label>Destination</label>
+            <select id="dest"><option value="">— select destination —</option></select>
+            <label>Notes</label>
+            <input type="text" id="notes" placeholder="Optional notes…">
+            <button class="btn" id="btn-queue-eq" onclick="queueMove()">Queue move</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Active moves</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:#666" id="q-count">None</span>
+            <span class="collapse-toggle" onclick="togglePanel('q-body',this)">▾</span>
+          </div>
+        </div>
+        <div id="q-body" class="panel-body">
+          <div style="font-size:12px;color:#888;text-align:center;padding:1rem 0">No moves queued</div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Move log</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn-sm" onclick="copyLog('equipment')">Copy</button>
+            <button class="btn-sm" onclick="clearCompletedMoves()" style="color:#c0392b">Clear done</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;padding:6px 12px 0" id="log-sum"></div>
+        <div class="log-scroll" id="log-list">
+          <div class="empty-msg" style="padding:1.5rem 0">No moves logged yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLS TAB -->
+<div id="tabpanel-tools" class="tabpanel">
+  <div class="main-grid">
+    <div class="left-col">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-sm" style="flex:1" onclick="openAddModal('tool')">+ Add tool</button>
+      </div>
+      <div class="pills" id="tool-pills"></div>
+      <div id="tool-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+    <div class="right-col">
+      <div class="panel-box">
+        <div class="panel-head"><span class="panel-head-title">Plan a move</span></div>
+        <div class="form-inner">
+          <div id="tsel-empty" class="empty-msg" style="padding:1.5rem 0">Select a tool</div>
+          <div id="tsel-detail" style="display:none">
+            <div class="detail-box">
+              <div style="font-size:13px;font-weight:600" id="tsn"></div>
+              <div style="font-size:12px;color:#666;margin-top:2px" id="tsl"></div>
+              <div style="font-size:12px;color:#888;margin-top:1px" id="tsm"></div>
+            </div>
+            <label>Destination</label>
+            <select id="tdest"><option value="">— select destination —</option></select>
+            <label>Notes</label>
+            <input type="text" id="tnotes" placeholder="Optional notes…">
+            <button class="btn" id="btn-queue-tool" onclick="queueToolMove()">Queue move</button>
+          </div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Active moves</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:#666" id="tq-count">None</span>
+            <span class="collapse-toggle" onclick="togglePanel('tq-body',this)">▾</span>
+          </div>
+        </div>
+        <div id="tq-body" class="panel-body">
+          <div style="font-size:12px;color:#888;text-align:center;padding:1rem 0">No moves queued</div>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Move log</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn-sm" onclick="copyLog('tool')">Copy</button>
+            <button class="btn-sm" onclick="clearCompletedMoves()" style="color:#c0392b">Clear done</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;padding:6px 12px 0" id="tlog-sum"></div>
+        <div class="log-scroll" id="tlog-list">
+          <div class="empty-msg" style="padding:1.5rem 0">No moves logged yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACHMENTS TAB -->
+<div id="tabpanel-attach" class="tabpanel">
+  <div class="main-grid">
+    <div class="left-col">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-sm" style="flex:1" onclick="openAddModal('att')">+ Add attachment</button>
+      </div>
+      <div class="pills" id="att-pills"></div>
+      <div id="att-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+    <div class="right-col">
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Active moves</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:12px;color:#666" id="q-count-att"></span>
+            <span class="collapse-toggle" onclick="togglePanel('q-body-att',this)">▾</span>
+          </div>
+        </div>
+        <div id="q-body-att" class="panel-body"><div style="font-size:12px;color:#888;text-align:center;padding:1rem 0">No moves queued</div></div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Move log</span>
+          <div style="display:flex;gap:5px">
+            <button class="btn-sm" onclick="copyLog('attachment')">Copy</button>
+            <button class="btn-sm" onclick="clearCompletedMoves()" style="color:#c0392b">Clear done</button>
+          </div>
+        </div>
+        <div style="font-size:11px;color:#888;padding:6px 12px 0" id="log-sum-att"></div>
+        <div class="log-scroll" id="log-list-att"><div class="empty-msg" style="padding:1.5rem 0">No moves logged yet</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SITES TAB -->
+<div id="tabpanel-sites" class="tabpanel">
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <select id="site-filter" onchange="renderSites()" style="flex:1">
+      <option value="">All sites with equipment</option>
+    </select>
+    <button class="btn-sm" onclick="openModal('site')" style="white-space:nowrap">+ Add site</button>
+  </div>
+  <div id="sites-list"></div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- ═══ MODALS ═════════════════════════════════════════════════════════════ -->
+
+<!-- ADD EQUIPMENT -->
+<div class="modal-bg" id="modal-eq">
+  <div class="modal">
+    <h2>Add equipment</h2>
+    <label>ID (e.g. E-022)</label>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" id="new-eid" placeholder="E-001" style="flex:1">
+      <button class="btn-sm" onclick="autoId('eq')" style="white-space:nowrap;flex-shrink:0;font-size:11px">↻ Auto</button>
+    </div>
+    <label>Name</label>
+    <input type="text" id="new-ename" placeholder="CAT 305, Genie S-65…">
+    <label>Machine Type</label>
+    <select id="new-etype"><option value="">— select type —</option></select>
+    <label>Mobilization</label>
+    <select id="new-etruck"></select>
+    <label>Current Location</label>
+    <select id="new-eloc"><option value="">— select site —</option></select>
+    <label>Status</label>
+    <select id="new-estatus"></select>
+    <label>Notes</label>
+    <input type="text" id="new-enotes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('eq')">Cancel</button>
+      <button class="btn" id="btn-add-eq" onclick="addEquipment()">Add to database</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TOOL -->
+<div class="modal-bg" id="modal-tool">
+  <div class="modal">
+    <h2>Add tool</h2>
+    <label>ID (e.g. T-001)</label>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" id="new-tid" placeholder="T-001" style="flex:1">
+      <button class="btn-sm" onclick="autoId('tool')" style="white-space:nowrap;flex-shrink:0;font-size:11px">↻ Auto</button>
+    </div>
+    <label>Name</label>
+    <input type="text" id="new-tname" placeholder="Rotary Hammer, Air Compressor…">
+    <label>Tool Type</label>
+    <select id="new-ttype"><option value="">— select type —</option></select>
+    <label>Mobilization</label>
+    <select id="new-ttruck"></select>
+    <label>Current Location</label>
+    <select id="new-tloc"><option value="">— select site —</option></select>
+    <label>Status</label>
+    <select id="new-tstatus"></select>
+    <label>Notes</label>
+    <input type="text" id="new-tnotes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('tool')">Cancel</button>
+      <button class="btn" id="btn-add-tool" onclick="addTool()">Add to database</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SITE -->
+<div class="modal-bg" id="modal-site">
+  <div class="modal">
+    <h2>Add site / location</h2>
+    <label>Full address (required)</label>
+<input type="text" id="new-site" placeholder="1234 Example St, Burbank, CA 91505">
+<label>Slug (optional, for QR codes)</label>
+<input type="text" id="new-slug" placeholder="site-001">
+<div style="font-size:11px;color:#aaa;margin-top:4px">Short unique ID used in QR codes — e.g. site-001</div>
+    <input type="text" id="new-site" placeholder="1234 Example St">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('site')">Cancel</button>
+      <button class="btn" id="btn-add-site" onclick="addSite()">Add site</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ATTACHMENT -->
+<div class="modal-bg" id="modal-att">
+  <div class="modal">
+    <h2>Add attachment</h2>
+    <label>ID (e.g. A-010)</label>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" id="new-aid" placeholder="A-001" style="flex:1">
+      <button class="btn-sm" onclick="autoId('att')" style="white-space:nowrap;flex-shrink:0;font-size:11px">↻ Auto</button>
+    </div>
+    <label>Name</label>
+    <input type="text" id="new-aname" placeholder='36" Bucket, Hydraulic Thumb…'>
+    <label>Pair with machine</label>
+    <select id="new-apaired"><option value="">Shared / unpaired</option></select>
+    <label>Current Location</label>
+    <select id="new-aloc"><option value="">— select site —</option></select>
+    <label>Status</label>
+    <select id="new-astatus"></select>
+    <label>Notes</label>
+    <input type="text" id="new-anotes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('att')">Cancel</button>
+      <button class="btn" id="btn-add-att" onclick="addAttachment()">Add to database</button>
+    </div>
+  </div>
+</div>
+
+<!-- MOVE ATTACHMENT -->
+<div class="modal-bg" id="modal-attmove">
+  <div class="modal">
+    <h2 id="attmove-title">Move attachment</h2>
+    <div id="attmove-info" style="font-size:12px;color:#666;margin-bottom:4px"></div>
+    <label>Destination</label>
+    <select id="attmove-dest"><option value="">— select destination —</option></select>
+    <label>Pair with machine</label>
+    <select id="attmove-paired"><option value="">Shared / unpaired</option></select>
+    <label>Notes</label>
+    <input type="text" id="attmove-notes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('attmove')">Cancel</button>
+      <button class="btn" id="btn-queue-att" onclick="queueAttMove()">Queue move</button>
+    </div>
+  </div>
+</div>
+
+<!-- SET CONDITION -->
+<div class="modal-bg" id="modal-condition">
+  <div class="modal">
+    <h2 id="cond-title">Set field condition</h2>
+    <div style="font-size:12px;color:#888;margin-bottom:4px" id="cond-sub"></div>
+    <label>Condition / field note</label>
+    <input type="text" id="cond-input" placeholder="e.g. Missing pin, Needs re-hardfacing…">
+    <div class="cond-preset">
+      <button onclick="setCondPreset('Missing pin')">Missing pin</button>
+      <button onclick="setCondPreset('Needs re-hardfacing')">Needs re-hardfacing</button>
+      <button onclick="setCondPreset('Needs service')">Needs service</button>
+      <button onclick="setCondPreset('Out of service')">Out of service</button>
+      <button onclick="setCondPreset('Check hydraulics')">Check hydraulics</button>
+      <button onclick="setCondPreset('Low hours — available')">Low hours</button>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="clearCondition()">Clear condition</button>
+      <button class="btn" onclick="saveCondition()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR LABEL MODAL -->
+<div class="modal-bg" id="modal-qr">
+  <div class="modal" style="text-align:center;max-width:320px">
+    <div id="qr-label-inner">
+      <div style="font-size:11px;color:#aaa;letter-spacing:.05em;margin-bottom:10px">GA DELIVERY PLANNER</div>
+      <div id="qr-canvas" style="display:inline-block;border:1px solid #e0e0e0;border-radius:8px;padding:10px;background:#fff"></div>
+      <div style="font-size:17px;font-weight:600;margin-top:12px" id="qr-name"></div>
+      <div style="font-size:12px;color:#666;margin-top:2px" id="qr-type"></div>
+      <div style="display:inline-block;font-size:13px;font-weight:600;font-family:monospace;margin-top:6px;background:#f5f5f3;padding:4px 12px;border-radius:6px;letter-spacing:.05em" id="qr-id"></div>
+      <div style="font-size:11px;color:#aaa;margin-top:4px" id="qr-loc"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn-outline" onclick="closeModal('qr')" style="flex:1;margin-top:0">Done</button>
+      <button class="btn" onclick="printLabel()" style="flex:1;margin-top:0">Print label</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT-ONLY SHELL -->
+<div id="print-shell"></div>
+
+<!-- Supabase JS client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://swosrovucwcsbppjctmk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3b3Nyb3Z1Y3djc2JwcGpjdG1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MzM2NjcsImV4cCI6MjA5MjMwOTY2N30.5eYl6y6GH3weqBPk7ccU9VVAj3AQCuZBkhYypV-UoEU';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ════════════════════════════════════════════════════════════════════════════
+//  STATE — single source of truth, kept in sync with DB via realtime
+// ════════════════════════════════════════════════════════════════════════════
+let EQ = [], TOOLS = [], ATT = [], LOCS = [], LOCS_FULL = [], MOVES = [];
+let MACHINE_TYPES = [], TOOL_TYPES = [], MOBS = [], STATUSES = [];
+let sel = null, selTool = null, selAttId = null;
+let condId = null, condKind = null;
+let eqLocFilter = null, toolLocFilter = null, attLocFilter = null;
+const updatingStatus = new Set();
+let lastIds = { E: 0, T: 0, A: 0 };
+
+// ════════════════════════════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+function getAtts(eqId) { return ATT.filter(a => a.paired_eq_id === eqId); }
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function setSt(msg, cls) {
+  const e = document.getElementById('sync-st');
+  e.textContent = msg; e.className = cls;
+}
+function setBtn(id, disabled, text) {
+  const b = document.getElementById(id);
+  if (b) { b.disabled = disabled; if (text != null) b.textContent = text; }
+}
+function _idNum(prefix, id) {
+  const m = String(id || '').match(new RegExp('^' + prefix + '-(\\d+)$', 'i'));
+  return m ? parseInt(m[1], 10) : 0;
+}
+function generateNextId(prefix, arr) {
+  let max = lastIds[prefix] || 0;
+  arr.forEach(it => { const n = _idNum(prefix, it.id); if (n > max) max = n; });
+  return prefix + '-' + String(max + 1).padStart(3, '0');
+}
+function recomputeLastIds() {
+  lastIds = { E: 0, T: 0, A: 0 };
+  EQ.forEach(e => { const n = _idNum('E', e.id); if (n > lastIds.E) lastIds.E = n; });
+  TOOLS.forEach(t => { const n = _idNum('T', t.id); if (n > lastIds.T) lastIds.T = n; });
+  ATT.forEach(a => { const n = _idNum('A', a.id); if (n > lastIds.A) lastIds.A = n; });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════════════════════════
+document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-US', {
+  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+});
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const itemId = params.get('item');
+  if (itemId) { showMobileItemView(itemId); return; }
+  await loadAll();
+  setupRealtime();
+});
+
+// ── DARK MODE ────────────────────────────────────────────────────────────────
+function toggleDark() {
+  const isDark = document.body.classList.toggle('dark');
+  localStorage.setItem('ga-dark', isDark ? '1' : '0');
+  document.getElementById('dark-toggle').textContent = isDark ? '☀️' : '🌙';
+}
+// Apply saved preference immediately
+(function(){
+  const saved = localStorage.getItem('ga-dark');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (saved === '1' || (saved === null && prefersDark)) {
+    document.body.classList.add('dark');
+    const btn = document.getElementById('dark-toggle');
+    if (btn) btn.textContent = '☀️';
+  }
+})();
+function escMobile(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showMobileItemView(itemId) {
+  document.querySelector('.wrap').innerHTML = `
+    <div style="max-width:480px;margin:0 auto;padding:2rem 1rem;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+      <div style="font-size:12px;color:#888;margin-bottom:1rem">GA Delivery Planner</div>
+      <div id="mobile-item-view" style="background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+        <div style="color:#888;font-size:13px">Loading <strong>${escMobile(itemId)}</strong>…</div>
+      </div>
+    </div>`;
+  loadMobileItem(itemId);
+}
+
+async function loadMobileItem(itemId) {
+  const view = document.getElementById('mobile-item-view');
+  try {
+    const [eq, tool, att] = await Promise.all([
+      sb.from('equipment').select('*').eq('id', itemId).single(),
+      sb.from('tools').select('*').eq('id', itemId).single(),
+      sb.from('attachments').select('*').eq('id', itemId).single(),
+    ]);
+    let item = null, kind = null;
+    if (eq.data)   { item = eq.data;   kind = 'equipment'; }
+    else if (tool.data) { item = tool.data; kind = 'tool'; }
+    else if (att.data)  { item = att.data;  kind = 'attachment'; }
+
+    if (!item) {
+      view.innerHTML = `<div style="color:#c0392b;font-size:14px">Item not found: ${escMobile(itemId)}</div>`;
+      return;
+    }
+    view.innerHTML = `
+      <div style="font-size:11px;color:#888;margin-bottom:4px">${escMobile(itemId)} · ${escMobile(kind)}</div>
+      <div style="font-size:22px;font-weight:700;margin-bottom:8px">${escMobile(item.name)}</div>
+      <div style="font-size:14px;color:#555;margin-bottom:4px">📍 ${escMobile(item.loc)}</div>
+      <div style="font-size:13px;color:#888;margin-bottom:1rem">${escMobile(item.status || '')}</div>
+      <div style="background:#f5f5f3;border-radius:8px;padding:1rem;font-size:13px;color:#888;text-align:center">
+        Mobile actions coming soon
+      </div>`;
+  } catch(err) {
+    view.innerHTML = `<div style="color:#c0392b;font-size:13px">Error: ${escMobile(err.message)}</div>`;
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════════════════
+//  LOAD ALL DATA
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAll() {
+  setSt('Loading from database…', 'sync-neutral');
+  try {
+    const [eq, tools, att, locs, mt, tt, mob, stat, mvs] = await Promise.all([
+      sb.from('equipment').select('*').order('id'),
+      sb.from('tools').select('*').order('id'),
+      sb.from('attachments').select('*').order('id'),
+      sb.from('locations').select('*').order('name'),
+      sb.from('machine_types').select('name').order('sort_order').order('name'),
+      sb.from('tool_types').select('name').order('sort_order').order('name'),
+      sb.from('mobilization_options').select('name').order('sort_order').order('name'),
+      sb.from('statuses').select('name').order('sort_order').order('name'),
+      sb.from('moves').select('*').order('queued_at', { ascending: false }).limit(200)
+    ]);
+    for (const r of [eq, tools, att, locs, mt, tt, mob, stat, mvs]) {
+      if (r.error) throw r.error;
+    }
+    EQ = eq.data || [];
+    TOOLS = tools.data || [];
+    ATT = att.data || [];
+    LOCS_FULL = locs.data || [];
+LOCS = LOCS_FULL.map(r => r.name);
+    MACHINE_TYPES = (mt.data || []).map(r => r.name);
+    TOOL_TYPES = (tt.data || []).map(r => r.name);
+    MOBS = (mob.data || []).map(r => r.name);
+    STATUSES = (stat.data || []).map(r => r.name);
+    MOVES = mvs.data || [];
+    recomputeLastIds();
+    setSt(`<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`, 'sync-ok');
+    document.getElementById('sync-st').innerHTML = `<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`;
+    buildDropdowns();
+    renderAll();
+  } catch (err) {
+    console.error(err);
+    setSt('Database error: ' + (err.message || err), 'sync-err');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  REALTIME — push changes from any connected client to all others
+// ════════════════════════════════════════════════════════════════════════════
+function setupRealtime() {
+  const handle = (table, arrRef, onChange) => (payload) => {
+    const arr = arrRef();
+    if (payload.eventType === 'INSERT') {
+      // skip if already present (we may have inserted optimistically)
+      if (!arr.find(x => x.id === payload.new.id)) arr.push(payload.new);
+    } else if (payload.eventType === 'UPDATE') {
+      const i = arr.findIndex(x => x.id === payload.new.id);
+      if (i >= 0) arr[i] = payload.new;
+      else arr.push(payload.new);
+    } else if (payload.eventType === 'DELETE') {
+      const i = arr.findIndex(x => x.id === payload.old.id);
+      if (i >= 0) arr.splice(i, 1);
+    }
+    if (onChange) onChange();
+  };
+
+  sb.channel('eq-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'equipment' },
+        handle('equipment', () => EQ, () => { recomputeLastIds(); renderEq(); renderEqPills(); renderSites(); buildDropdowns(); refreshSelectionDetail(); }))
+    .subscribe();
+
+  sb.channel('tool-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'tools' },
+        handle('tools', () => TOOLS, () => { recomputeLastIds(); renderTools(); renderToolPills(); renderSites(); refreshSelectionDetail(); }))
+    .subscribe();
+
+  sb.channel('att-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'attachments' },
+        handle('attachments', () => ATT, () => { recomputeLastIds(); renderAtt(); renderAttPills(); renderEq(); renderSites(); refreshSelectionDetail(); }))
+    .subscribe();
+
+  sb.channel('loc-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'locations' }, async () => {
+      const r = await sb.from('locations').select('*').order('name');
+LOCS_FULL = r.data || [];
+LOCS = LOCS_FULL.map(x => x.name);
+      LOCS = (r.data || []).map(x => x.name);
+      buildDropdowns(); renderSites();
+    })
+    .subscribe();
+
+  sb.channel('moves-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'moves' }, (payload) => {
+      if (payload.eventType === 'INSERT') {
+        if (!MOVES.find(m => m.id === payload.new.id)) MOVES.unshift(payload.new);
+      } else if (payload.eventType === 'UPDATE') {
+        const i = MOVES.findIndex(m => m.id === payload.new.id);
+        if (i >= 0) MOVES[i] = payload.new;
+        else MOVES.unshift(payload.new);
+      } else if (payload.eventType === 'DELETE') {
+        const i = MOVES.findIndex(m => m.id === payload.old.id);
+        if (i >= 0) MOVES.splice(i, 1);
+      }
+      renderQ(); renderLog(); renderEq(); renderTools(); renderAtt(); renderSites();
+    })
+    .subscribe();
+}
+
+// Re-show the right-panel detail boxes after data refreshes (locations, atts, etc.)
+function refreshSelectionDetail() {
+  if (sel) showEqDetail(sel);
+  if (selTool) showToolDetail(selTool);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  DROPDOWNS — populated from DB-backed lookup tables
+// ════════════════════════════════════════════════════════════════════════════
+function buildDropdowns() {
+  const sf = document.getElementById('site-filter');
+  const prevSiteFilter = sf ? sf.value : '';
+
+  const setOpts = (id, items, keepFirst = true) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    const first = keepFirst && el.options[0] ? el.options[0].cloneNode(true) : null;
+    el.innerHTML = '';
+    if (first) el.appendChild(first);
+    items.forEach(v => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      el.appendChild(o);
+    });
+    if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+  };
+
+  // Locations
+  ['dest','tdest','new-eloc','new-tloc','new-aloc','attmove-dest','site-filter']
+    .forEach(id => setOpts(id, LOCS, true));
+  if (sf && prevSiteFilter && !LOCS.includes(prevSiteFilter)) sf.value = '';
+
+  // Machine types / tool types
+  setOpts('new-etype', MACHINE_TYPES, true);
+  setOpts('new-ttype', TOOL_TYPES, true);
+
+  // Mobilization
+  setOpts('new-etruck', MOBS, false);
+  setOpts('new-ttruck', MOBS, false);
+
+  // Statuses
+  setOpts('new-estatus', STATUSES, false);
+  setOpts('new-tstatus', STATUSES, false);
+  setOpts('new-astatus', STATUSES, false);
+
+  // Equipment pair-with dropdowns (value = equipment ID)
+  ['new-apaired','attmove-paired'].forEach(did => {
+    const el = document.getElementById(did);
+    if (!el) return;
+    const prev = el.value;
+    el.innerHTML = '<option value="">Shared / unpaired</option>';
+    EQ.forEach(eq => {
+      const o = document.createElement('option');
+      o.value = eq.id; o.textContent = eq.name + ' (' + eq.id + ')';
+      el.appendChild(o);
+    });
+    if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  TAB NAV / MODALS
+// ════════════════════════════════════════════════════════════════════════════
+function goTab(n, b) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('active'));
+  b.classList.add('active');
+  document.getElementById('tabpanel-' + n).classList.add('active');
+}
+function openModal(t) { document.getElementById('modal-' + t).classList.add('open'); }
+function closeModal(t) { document.getElementById('modal-' + t).classList.remove('open'); }
+document.querySelectorAll('.modal-bg').forEach(bg => {
+  bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
+});
+function openAddModal(kind) {
+  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT] };
+  const [inp, pre, arr] = m[kind];
+  document.getElementById(inp).value = generateNextId(pre, arr);
+  openModal(kind);
+}
+function autoId(kind) {
+  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT] };
+  const [inp, pre, arr] = m[kind];
+  document.getElementById(inp).value = generateNextId(pre, arr);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ADD OPERATIONS — write to DB; realtime + optimistic for snappy UX
+// ════════════════════════════════════════════════════════════════════════════
+async function addEquipment() {
+  const id = document.getElementById('new-eid').value.trim();
+  const name = document.getElementById('new-ename').value.trim();
+  const type = document.getElementById('new-etype').value;
+  const truck = document.getElementById('new-etruck').value;
+  const loc = document.getElementById('new-eloc').value;
+  const status = document.getElementById('new-estatus').value || 'Available';
+  const notes = document.getElementById('new-enotes').value.trim();
+  if (!id || !name || !loc) { alert('ID, name, and location are required.'); return; }
+  if (EQ.find(e => e.id === id)) { alert('That ID already exists.'); return; }
+
+  setBtn('btn-add-eq', true, 'Saving…');
+  setSt('Saving ' + name + '…', 'sync-saving');
+  const { error } = await sb.from('equipment').insert({ id, name, type, truck, loc, status, condition: '', notes });
+  setBtn('btn-add-eq', false, 'Add to database');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('eq');
+  ['new-eid','new-ename','new-enotes'].forEach(i => document.getElementById(i).value = '');
+  setSt(name + ' saved ✓', 'sync-ok');
+}
+
+async function addTool() {
+  const id = document.getElementById('new-tid').value.trim();
+  const name = document.getElementById('new-tname').value.trim();
+  const type = document.getElementById('new-ttype').value;
+  const truck = document.getElementById('new-ttruck').value;
+  const loc = document.getElementById('new-tloc').value;
+  const status = document.getElementById('new-tstatus').value || 'Available';
+  const notes = document.getElementById('new-tnotes').value.trim();
+  if (!id || !name || !loc) { alert('ID, name, and location are required.'); return; }
+  if (TOOLS.find(t => t.id === id)) { alert('That ID already exists.'); return; }
+
+  setBtn('btn-add-tool', true, 'Saving…');
+  setSt('Saving ' + name + '…', 'sync-saving');
+  const { error } = await sb.from('tools').insert({ id, name, type, truck, loc, status, condition: '', notes });
+  setBtn('btn-add-tool', false, 'Add to database');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('tool');
+  ['new-tid','new-tname','new-tnotes'].forEach(i => document.getElementById(i).value = '');
+  setSt(name + ' saved ✓', 'sync-ok');
+}
+
+async function addSite() {
+  const name = document.getElementById('new-site').value.trim();
+  if (!name) return;
+  if (LOCS.includes(name)) { alert('That site already exists.'); return; }
+  setBtn('btn-add-site', true, 'Saving…');
+  setSt('Adding site…', 'sync-saving');
+  // Auto-generate slug like site-001
+const maxSlug = (LOCS_FULL || [])
+  .map(l => l.slug || '')
+  .map(s => { const m = s.match(/^site-(\d+)$/); return m ? parseInt(m[1]) : 0; })
+  .reduce((a, b) => Math.max(a, b), 0);
+const slug = 'site-' + String(maxSlug + 1).padStart(3, '0');
+if (slug && LOCS.find(l => l.slug === slug)) { alert('That slug already exists.'); return; }
+const { error } = await sb.from('locations').insert({ name, slug });
+  setBtn('btn-add-site', false, 'Add site');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  document.getElementById('new-site').value = '';
+  closeModal('site');
+  setSt(name + ' saved ✓', 'sync-ok');
+}
+
+async function addAttachment() {
+  const id = document.getElementById('new-aid').value.trim();
+  const name = document.getElementById('new-aname').value.trim();
+  const paired = document.getElementById('new-apaired').value || null;
+  const loc = document.getElementById('new-aloc').value;
+  const status = document.getElementById('new-astatus').value || 'Available';
+  const notes = document.getElementById('new-anotes').value.trim();
+  if (!id || !name || !loc) { alert('ID, name, and location are required.'); return; }
+  if (ATT.find(a => a.id === id)) { alert('That ID already exists.'); return; }
+
+  setBtn('btn-add-att', true, 'Saving…');
+  setSt('Saving ' + name + '…', 'sync-saving');
+  const { error } = await sb.from('attachments').insert({ id, name, paired_eq_id: paired, loc, status, notes });
+  setBtn('btn-add-att', false, 'Add to database');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('att');
+  ['new-aid','new-aname','new-anotes'].forEach(i => document.getElementById(i).value = '');
+  setSt(name + ' saved ✓', 'sync-ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  STATUS / CONDITION
+// ════════════════════════════════════════════════════════════════════════════
+async function toggleStatus(id, kind, evt) {
+  evt.stopPropagation();
+  if (updatingStatus.has(id)) return;
+  updatingStatus.add(id);
+  const arr = kind === 'tool' ? TOOLS : EQ;
+  const item = arr.find(x => x.id === id);
+  if (!item) { updatingStatus.delete(id); return; }
+  const next = item.status === 'In Use' ? 'Available' : 'In Use';
+  setSt('Updating status…', 'sync-saving');
+  const tbl = kind === 'tool' ? 'tools' : 'equipment';
+  const { error } = await sb.from(tbl).update({ status: next }).eq('id', id);
+  updatingStatus.delete(id);
+  if (error) { setSt('Status update failed: ' + error.message, 'sync-err'); return; }
+  setSt(item.name + ' → ' + next + ' ✓', 'sync-ok');
+}
+
+function openConditionModal(id, kind, evt) {
+  evt.stopPropagation();
+  condId = id; condKind = kind;
+  const arr = kind === 'tool' ? TOOLS : EQ;
+  const item = arr.find(x => x.id === id);
+  if (!item) return;
+  document.getElementById('cond-title').textContent = item.name + ' — field condition';
+  document.getElementById('cond-sub').textContent = item.condition ? 'Current: ' + item.condition : 'No condition set.';
+  document.getElementById('cond-input').value = item.condition || '';
+  openModal('condition');
+}
+function setCondPreset(text) { document.getElementById('cond-input').value = text; }
+async function saveCondition() {
+  const tbl = condKind === 'tool' ? 'tools' : 'equipment';
+  const newCond = document.getElementById('cond-input').value.trim();
+  setSt('Saving condition…', 'sync-saving');
+  const { error } = await sb.from(tbl).update({ condition: newCond }).eq('id', condId);
+  closeModal('condition');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); return; }
+  setSt('Condition updated ✓', 'sync-ok');
+}
+async function clearCondition() {
+  document.getElementById('cond-input').value = '';
+  await saveCondition();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SELECTION (right-panel detail)
+// ════════════════════════════════════════════════════════════════════════════
+function selEq(id) {
+  sel = (id === sel) ? null : id;
+  showEqDetail(sel);
+  renderEq();
+}
+function showEqDetail(id) {
+  const eq = EQ.find(e => e.id === id);
+  const empty = document.getElementById('sel-empty');
+  const detail = document.getElementById('sel-detail');
+  if (id && eq) {
+    empty.style.display = 'none';
+    detail.style.display = 'block';
+    document.getElementById('sn').textContent = eq.name;
+    document.getElementById('sl').textContent = 'At: ' + eq.loc;
+    document.getElementById('sm').textContent = [eq.type, eq.truck].filter(Boolean).join(' · ');
+    const atts = getAtts(eq.id);
+    document.getElementById('sa').innerHTML = atts.length
+      ? atts.map(a => `<span class="att-pill">${esc(a.name)}</span>`).join('') : '';
+    const aw = document.getElementById('aw');
+    if (atts.length) {
+      aw.style.display = 'block';
+      aw.textContent = atts.length + ' attachment' + (atts.length !== 1 ? 's' : '') + ' linked — they move with this machine.';
+    } else { aw.style.display = 'none'; }
+  } else {
+    empty.style.display = 'block';
+    detail.style.display = 'none';
+  }
+}
+function selToolFn(id) {
+  selTool = (id === selTool) ? null : id;
+  showToolDetail(selTool);
+  renderTools();
+}
+function showToolDetail(id) {
+  const tool = TOOLS.find(t => t.id === id);
+  const empty = document.getElementById('tsel-empty');
+  const detail = document.getElementById('tsel-detail');
+  if (id && tool) {
+    empty.style.display = 'none';
+    detail.style.display = 'block';
+    document.getElementById('tsn').textContent = tool.name;
+    document.getElementById('tsl').textContent = 'At: ' + tool.loc;
+    document.getElementById('tsm').textContent = [tool.type, tool.truck].filter(Boolean).join(' · ');
+  } else {
+    empty.style.display = 'block';
+    detail.style.display = 'none';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  QUEUE MOVES — insert into the moves table; realtime broadcasts to all users
+// ════════════════════════════════════════════════════════════════════════════
+async function queueMove() {
+  if (!sel) return;
+  const dest = document.getElementById('dest').value;
+  if (!dest) { alert('Select a destination first.'); return; }
+  const eq = EQ.find(e => e.id === sel);
+  setBtn('btn-queue-eq', true, 'Queueing…');
+  setSt('Queueing move…', 'sync-saving');
+  const { error } = await sb.from('moves').insert({
+    kind: 'equipment',
+    item_id: eq.id, item_name: eq.name, item_type: eq.type, truck: eq.truck,
+    from_loc: eq.loc, to_loc: dest,
+    notes: document.getElementById('notes').value.trim(),
+    status: 'queued'
+  });
+  setBtn('btn-queue-eq', false, 'Queue move');
+  if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  document.getElementById('notes').value = '';
+  document.getElementById('dest').value = '';
+  setSt('Move queued ✓', 'sync-ok');
+}
+
+async function queueToolMove() {
+  if (!selTool) return;
+  const dest = document.getElementById('tdest').value;
+  if (!dest) { alert('Select a destination first.'); return; }
+  const tool = TOOLS.find(t => t.id === selTool);
+  setBtn('btn-queue-tool', true, 'Queueing…');
+  setSt('Queueing tool move…', 'sync-saving');
+  const { error } = await sb.from('moves').insert({
+    kind: 'tool',
+    item_id: tool.id, item_name: tool.name, item_type: tool.type, truck: tool.truck,
+    from_loc: tool.loc, to_loc: dest,
+    notes: document.getElementById('tnotes').value.trim(),
+    status: 'queued'
+  });
+  setBtn('btn-queue-tool', false, 'Queue move');
+  if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  document.getElementById('tnotes').value = '';
+  document.getElementById('tdest').value = '';
+  setSt('Tool move queued ✓', 'sync-ok');
+}
+
+function openAttMove(id) {
+  const att = ATT.find(a => a.id === id);
+  if (!att) return;
+  selAttId = id;
+  document.getElementById('attmove-title').textContent = 'Move — ' + att.name;
+  const pairedEq = EQ.find(e => e.id === att.paired_eq_id);
+  document.getElementById('attmove-info').textContent =
+    'Currently at: ' + att.loc + (pairedEq ? ' · Paired with ' + pairedEq.name : '');
+  document.getElementById('attmove-notes').value = '';
+  document.getElementById('attmove-dest').value = '';
+  buildDropdowns();
+  document.getElementById('attmove-paired').value = att.paired_eq_id || '';
+  openModal('attmove');
+}
+
+async function queueAttMove() {
+  if (!selAttId) return;
+  const dest = document.getElementById('attmove-dest').value;
+  if (!dest) { alert('Select a destination first.'); return; }
+  const att = ATT.find(a => a.id === selAttId);
+  const paired = document.getElementById('attmove-paired').value || '(shared)';
+  setBtn('btn-queue-att', true, 'Queueing…');
+  setSt('Queueing attachment move…', 'sync-saving');
+  const { error } = await sb.from('moves').insert({
+    kind: 'attachment',
+    item_id: att.id, item_name: att.name,
+    from_loc: att.loc, to_loc: dest, paired,
+    notes: document.getElementById('attmove-notes').value.trim(),
+    status: 'queued'
+  });
+  setBtn('btn-queue-att', false, 'Queue move');
+  if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('attmove');
+  setSt('Attachment move queued ✓', 'sync-ok');
+}
+
+// Move status changes — UPDATE moves row OR call atomic completion RPC
+async function updateMoveStatus(id, ns) {
+  const m = MOVES.find(x => x.id === id);
+  if (!m) return;
+  setSt('Updating move…', 'sync-saving');
+  if (ns === 'transit') {
+    const { error } = await sb.from('moves').update({ status: 'transit', transit_at: new Date().toISOString() }).eq('id', id);
+    if (error) { setSt('Update failed: ' + error.message, 'sync-err'); return; }
+    setSt(m.item_name + ' → transit ✓', 'sync-ok');
+  } else if (ns === 'complete') {
+    // Atomic: marks complete, updates locations (incl. paired attachments), writes log
+    const fn = m.kind === 'equipment' ? 'complete_equipment_move'
+             : m.kind === 'tool'      ? 'complete_tool_move'
+             : 'complete_attachment_move';
+    const { error } = await sb.rpc(fn, { p_move_id: id });
+    if (error) { setSt('Complete failed: ' + error.message, 'sync-err'); return; }
+    setSt(m.item_name + ' → ' + m.to_loc + ' ✓', 'sync-ok');
+  }
+}
+
+async function rmMove(id) {
+  if (!confirm('Remove this move?')) return;
+  const { error } = await sb.from('moves').delete().eq('id', id);
+  if (error) { setSt('Delete failed: ' + error.message, 'sync-err'); return; }
+  setSt('Move removed ✓', 'sync-ok');
+}
+
+async function clearCompletedMoves() {
+  if (!confirm('Clear all completed moves from the log?')) return;
+  const { error } = await sb.from('moves').delete().eq('status', 'complete');
+  if (error) { setSt('Clear failed: ' + error.message, 'sync-err'); return; }
+  setSt('Completed moves cleared ✓', 'sync-ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  QR LABEL
+// ════════════════════════════════════════════════════════════════════════════
+let _currentQrText = '';
+function openQRModal(itemId, kind, evt) {
+  if (evt) evt.stopPropagation();
+  const arr = kind === 'tool' ? TOOLS : kind === 'att' ? ATT : EQ;
+  const item = arr.find(x => x.id === itemId);
+  if (!item) return;
+  document.getElementById('qr-name').textContent = item.name;
+  document.getElementById('qr-type').textContent = item.type || (kind === 'tool' ? 'Tool' : kind === 'att' ? 'Attachment' : 'Equipment');
+  document.getElementById('qr-id').textContent = item.id;
+  document.getElementById('qr-loc').textContent = 'Location: ' + item.loc;
+
+  // QR encodes "ID · Name" — free qrserver.com API, no library needed
+  _currentQrText = 'https://gatracker.netlify.app?item=' + encodeURIComponent(item.id);
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&qzone=1&data=' + encodeURIComponent(_currentQrText);
+  document.getElementById('qr-canvas').innerHTML =
+    '<img src="' + qrUrl + '" width="180" height="180" style="display:block;border-radius:6px" alt="QR ' + esc(item.id) + '">';
+  openModal('qr');
+}
+
+function printLabel() {
+  const name = document.getElementById('qr-name').textContent;
+  const type = document.getElementById('qr-type').textContent;
+  const itemId = document.getElementById('qr-id').textContent;
+  const loc  = document.getElementById('qr-loc').textContent;
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&qzone=1&data=' + encodeURIComponent(_currentQrText);
+
+  const win = window.open('', '_blank', 'width=340,height=520');
+  win.document.write(`<!DOCTYPE html><html><head><title>Label — ${itemId}</title>
+    <style>
+      :root{
+  --bg:#f5f5f3;--surface:#fff;--border:#e0e0e0;--border2:#f0f0ee;
+  --text:#1a1a1a;--text2:#555;--text3:#888;--text4:#aaa;
+  --accent:#378ADD;--accent-bg:#EBF4FD;
+  --btn-bg:#1a1a1a;--btn-text:#fff;
+  --head-bg:#f9f9f7;--input-bg:#fff;
+  --warn-bg:#FAEEDA;--warn-text:#633806;
+  --ok-bg:#EAF3DE;--ok-text:#27500A;
+  --q-bg:#E6F1FB;--q-text:#0C447C;
+  --att-bg:#EDE9FE;--att-text:#5B21B6;
+  --tool-bg:#E0F7FA;--tool-text:#006064;
+  --cond-bg:#FEF3C7;--cond-text:#92400E;--cond-border:#FDE68A;
+}
+body.dark{
+  --bg:#0f0f0f;--surface:#1a1a1a;--border:#2a2a2a;--border2:#222;
+  --text:#f0f0ee;--text2:#aaa;--text3:#666;--text4:#444;
+  --accent:#5BA3E8;--accent-bg:#1a2a3a;
+  --btn-bg:#f0f0ee;--btn-text:#1a1a1a;
+  --head-bg:#141414;--input-bg:#222;
+  --warn-bg:#2a1a00;--warn-text:#EF9F27;
+  --ok-bg:#0a1f0a;--ok-text:#6BCB77;
+  --q-bg:#0a1a2a;--q-text:#5BA3E8;
+  --att-bg:#1a0a2a;--att-text:#A78BFA;
+  --tool-bg:#001a1f;--tool-text:#22D3EE;
+  --cond-bg:#1f1500;--cond-text:#FCD34D;--cond-border:#78450a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--bg);color:var(--text);font-size:14px;
+  transition:background .2s,color .2s;
+  padding-top:env(safe-area-inset-top);
+  padding-left:env(safe-area-inset-left);
+  padding-right:env(safe-area-inset-right);
+}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1rem;padding-bottom:calc(1.5rem + env(safe-area-inset-bottom))}
+      body{font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}
+      .label{text-align:center;border:1.5px solid #ccc;border-radius:12px;padding:20px 24px;width:280px}
+      .header{font-size:9px;color:#aaa;letter-spacing:.08em;margin-bottom:10px;text-transform:uppercase}
+      .qr-img{display:block;margin:0 auto;border-radius:6px}
+      .item-name{font-size:17px;font-weight:600;margin-top:10px;color:#111;word-break:break-word}
+      .item-type{font-size:11px;color:#666;margin-top:2px}
+      .item-id{display:inline-block;font-family:monospace;font-size:14px;font-weight:700;background:#f5f5f3;padding:3px 14px;border-radius:5px;letter-spacing:.06em;margin-top:8px;color:#111}
+      .item-loc{font-size:10px;color:#aaa;margin-top:5px}
+      @media print{body{margin:0}.label{border:1px solid #ccc;border-radius:8px}}
+    </style></head><body>
+    <div class="label">
+      <div class="header">GA Delivery Planner</div>
+      <img class="qr-img" src="${qrUrl}" width="200" height="200" alt="QR ${esc(itemId)}">
+      <div class="item-name">${esc(name)}</div>
+      <div class="item-type">${esc(type)}</div>
+      <div class="item-id">${esc(itemId)}</div>
+      <div class="item-loc">${esc(loc)}</div>
+    </div>
+    <script>window.onload=function(){window.focus();window.print();}<\/script>
+    </body></html>`);
+  win.document.close();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  RENDER
+// ════════════════════════════════════════════════════════════════════════════
+function renderAll() {
+  renderQ();
+  renderEqPills(); renderEq();
+  renderToolPills(); renderTools();
+  renderAttPills(); renderAtt();
+  renderLog();
+  renderSites();
+}
+
+function renderQ() {
+  const active = MOVES.filter(m => m.status !== 'complete');
+  const eqA = active.filter(m => m.kind === 'equipment');
+  const toolA = active.filter(m => m.kind === 'tool');
+  const attA = active.filter(m => m.kind === 'attachment');
+
+  const empty = '<div style="font-size:12px;color:#888;text-align:center;padding:1rem 0">No moves queued</div>';
+  const sumOf = arr => {
+    if (!arr.length) return 'None';
+    const q = arr.filter(m => m.status === 'queued').length;
+    const t = arr.filter(m => m.status === 'transit').length;
+    return [t ? t + ' transit' : '', q ? q + ' queued' : ''].filter(Boolean).join(' · ');
+  };
+  const qHTML = m => {
+    const isTr = m.status === 'transit';
+    const isAtt = m.kind === 'attachment';
+    const isTool = m.kind === 'tool';
+    const btn = isTr
+      ? `<button class="btn-sm primary" onclick="updateMoveStatus(${m.id},'complete')">Done →</button>`
+      : `<button class="btn-sm" onclick="updateMoveStatus(${m.id},'transit')">Transit</button>`;
+    const cardCls = isAtt ? 'att-move' : isTool ? 'tool-move' : m.status;
+    return `<div class="q-card ${cardCls}">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px">
+          <strong style="font-size:12px">${esc(m.item_name)}</strong>
+          <span class="bdg ${isTr ? 'bg-tr' : 'bg-q'}" style="font-size:10px">${isTr ? 'Transit' : 'Queued'}</span>
+          ${isAtt ? '<span class="bdg bg-attmove" style="font-size:10px">Attachment</span>' : ''}
+          ${isTool ? '<span class="bdg bg-toolmove" style="font-size:10px">Tool</span>' : ''}
+        </div>
+        <div style="font-size:11px;color:#666">${esc(m.from_loc || '')} → ${esc(m.to_loc)}${m.notes ? ' · ' + esc(m.notes) : ''}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">${btn}
+        <button class="btn-sm" onclick="rmMove(${m.id})" style="padding:4px 8px">✕</button>
+      </div>
+    </div>`;
+  };
+  const fill = (bodyId, cntId, arr) => {
+    const body = document.getElementById(bodyId);
+    const cnt = document.getElementById(cntId);
+    if (!body) return;
+    body.innerHTML = arr.length ? arr.map(qHTML).join('') : empty;
+    if (cnt) cnt.textContent = sumOf(arr);
+  };
+  fill('q-body', 'q-count', eqA);
+  fill('tq-body', 'tq-count', toolA);
+  fill('q-body-att', 'q-count-att', attA);
+}
+
+function renderEqPills() {
+  const c = document.getElementById('eq-pills');
+  if (!c) return;
+  const locs = {};
+  EQ.forEach(eq => { locs[eq.loc] = (locs[eq.loc] || 0) + 1; });
+  const keys = Object.keys(locs).sort();
+  if (keys.length <= 1) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!eqLocFilter?' active':''}" data-loc="">All <span style="font-size:10px;opacity:.6">${EQ.length}</span></button>`;
+  keys.forEach(k => {
+    html += `<button class="pill${eqLocFilter===k?' active':''}" data-loc="${esc(k)}">${esc(k)} <span style="font-size:10px;opacity:.6">${locs[k]}</span></button>`;
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    eqLocFilter = btn.dataset.loc || null;
+    renderEqPills(); renderEq();
+  };
+}
+function renderToolPills() {
+  const c = document.getElementById('tool-pills');
+  if (!c) return;
+  const locs = {};
+  TOOLS.forEach(t => { locs[t.loc] = (locs[t.loc] || 0) + 1; });
+  const keys = Object.keys(locs).sort();
+  if (keys.length <= 1) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!toolLocFilter?' active':''}" data-loc="">All <span style="font-size:10px;opacity:.6">${TOOLS.length}</span></button>`;
+  keys.forEach(k => {
+    html += `<button class="pill${toolLocFilter===k?' active':''}" data-loc="${esc(k)}">${esc(k)} <span style="font-size:10px;opacity:.6">${locs[k]}</span></button>`;
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    toolLocFilter = btn.dataset.loc || null;
+    renderToolPills(); renderTools();
+  };
+}
+function renderAttPills() {
+  const c = document.getElementById('att-pills');
+  if (!c) return;
+  const locs = {};
+  ATT.forEach(a => { locs[a.loc] = (locs[a.loc] || 0) + 1; });
+  const keys = Object.keys(locs).sort();
+  if (keys.length <= 1) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!attLocFilter?' active':''}" data-loc="">All <span style="font-size:10px;opacity:.6">${ATT.length}</span></button>`;
+  keys.forEach(k => {
+    html += `<button class="pill${attLocFilter===k?' active':''}" data-loc="${esc(k)}">${esc(k)} <span style="font-size:10px;opacity:.6">${locs[k]}</span></button>`;
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    attLocFilter = btn.dataset.loc || null;
+    renderAttPills(); renderAtt();
+  };
+}
+
+function renderItemList(cfg) {
+  const list = document.getElementById(cfg.listId);
+  if (!cfg.arr.length) { list.innerHTML = '<div class="empty-msg">No items found</div>'; return; }
+  const filtered = cfg.locFilter ? cfg.arr.filter(x => x.loc === cfg.locFilter) : cfg.arr;
+  if (!filtered.length) { list.innerHTML = '<div class="empty-msg">No items at this site</div>'; return; }
+  list.innerHTML = filtered.map(item => {
+    const atts = cfg.getAttsFn ? cfg.getAttsFn(item.id) : [];
+    const inQ = MOVES.some(m => m.item_id === item.id && m.kind === cfg.kind && m.status !== 'complete');
+    const isInUse = item.status === 'In Use';
+    const badges = [
+      inQ ? `<span class="bdg ${cfg.activeBadgeCls}" style="font-size:10px">Active</span>` : ''
+    ].filter(Boolean).join('');
+    return `<div class="eq-card${cfg.selId === item.id ? ' selected' : ''}" onclick="${cfg.onClickFn}('${esc(item.id)}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">
+          <strong style="font-size:13px">${esc(item.name)}</strong>
+          ${badges}
+        </div>
+        <div style="font-size:11px;color:#555">${esc(item.loc)}</div>
+        <div style="font-size:11px;color:#aaa">${esc(item.type || '')}${item.truck ? ' · ' + esc(item.truck) : ''}</div>
+        ${atts.length ? `<div style="margin-top:4px">${atts.map(a => `<span class="att-pill">${esc(a.name)}</span>`).join('')}</div>` : ''}
+        ${item.condition
+          ? `<div style="margin-top:5px"><span class="cond-badge" onclick="openConditionModal('${esc(item.id)}','${cfg.kind}',event)">⚠ ${esc(item.condition)}</span></div>`
+          : `<div style="margin-top:5px"><span style="font-size:10px;color:#bbb;cursor:pointer" onclick="openConditionModal('${esc(item.id)}','${cfg.kind}',event)">+ condition</span></div>`}
+        <div style="display:flex;gap:5px;margin-top:8px">
+          <button class="status-toggle ${isInUse ? 'inuse' : 'avail'}" onclick="toggleStatus('${esc(item.id)}','${cfg.kind}',event)">
+            ${isInUse ? 'In Use' : 'Available'}
+          </button>
+          <button class="btn-sm" style="font-size:11px" onclick="openQRModal('${esc(item.id)}','${cfg.kind}',event)">Label</button>
+          <button class="rename-btn" onclick="renameItem('${esc(item.id)}','${cfg.kind}',event)" title="Rename">✏</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function openSiteQRModal(locName, slug) {
+  if (!slug) { alert('This site has no slug yet. Edit the site to add one.'); return; }
+  document.getElementById('qr-name').textContent = locName;
+  document.getElementById('qr-type').textContent = 'Job Site';
+  document.getElementById('qr-id').textContent = slug;
+  document.getElementById('qr-loc').textContent = locName;
+  _currentQrText = 'https://gatracker.netlify.app?site=' + encodeURIComponent(slug);
+  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&qzone=1&data=' + encodeURIComponent(_currentQrText);
+  document.getElementById('qr-canvas').innerHTML =
+    '<img src="' + qrUrl + '" width="180" height="180" style="display:block;border-radius:6px" alt="QR ' + esc(slug) + '">';
+  openModal('qr');
+}
+function renderEq() {
+  renderItemList({
+    listId: 'eq-list', arr: EQ, locFilter: eqLocFilter,
+    kind: 'equipment', selId: sel, getAttsFn: getAtts,
+    activeBadgeCls: 'bg-q', onClickFn: 'selEq'
+  });
+}
+function renderTools() {
+  renderItemList({
+    listId: 'tool-list', arr: TOOLS, locFilter: toolLocFilter,
+    kind: 'tool', selId: selTool, getAttsFn: null,
+    activeBadgeCls: 'bg-toolmove', onClickFn: 'selToolFn'
+  });
+}
+
+function renderAtt() {
+  const list = document.getElementById('att-list');
+  if (!ATT.length) { list.innerHTML = '<div class="empty-msg">No attachments found</div>'; return; }
+  const filtered = attLocFilter ? ATT.filter(a => a.loc === attLocFilter) : ATT;
+  if (!filtered.length) { list.innerHTML = '<div class="empty-msg">No attachments at this site</div>'; return; }
+  list.innerHTML = filtered.map(a => {
+    const pairedEq = EQ.find(e => e.id === a.paired_eq_id);
+    const inQ = MOVES.some(m => m.kind === 'attachment' && m.item_id === a.id && m.status !== 'complete');
+    return `<div class="att-card">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">
+          <strong style="font-size:13px">${esc(a.name)}</strong>
+          ${inQ ? '<span class="bdg bg-attmove" style="font-size:10px">Moving</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:#666;margin-top:2px">
+          ${pairedEq ? 'Paired · ' + esc(pairedEq.name) : 'Shared / unassigned'} · ${esc(a.loc)}
+        </div>
+        ${a.notes ? `<div style="font-size:11px;font-style:italic;color:#888">${esc(a.notes)}</div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+        <span class="bdg ${a.status === 'In Use' ? 'bg-inuse' : 'bg-gray'}">${esc(a.status)}</span>
+        <button class="btn-sm" onclick="openAttMove('${esc(a.id)}')" style="font-size:11px">Move</button>
+        <button class="btn-sm" onclick="openQRModal('${esc(a.id)}','att',event)" style="font-size:11px">Label</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLog() {
+  const targets = [
+    { listId: 'log-list', sumId: 'log-sum', kind: 'equipment' },
+    { listId: 'tlog-list', sumId: 'tlog-sum', kind: 'tool' },
+    { listId: 'log-list-att', sumId: 'log-sum-att', kind: 'attachment' }
+  ];
+  const rowHTML = m => {
+    const t = m.completed_at || m.transit_at || m.queued_at;
+    const ts = new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    let act = '';
+    if (m.status === 'queued') act = `<button class="btn-sm" onclick="updateMoveStatus(${m.id},'transit')">Transit</button>`;
+    if (m.status === 'transit') act = `<button class="btn-sm primary" onclick="updateMoveStatus(${m.id},'complete')">Complete →</button>`;
+    const sc = m.status === 'complete' ? 'bg-done' : m.status === 'transit' ? 'bg-tr' : 'bg-q';
+    const sl = m.status === 'complete' ? 'Complete' : m.status === 'transit' ? 'Transit' : 'Queued';
+    const kindBdg = m.kind === 'attachment' ? '<span class="bdg bg-attmove" style="font-size:10px">Attachment</span>'
+                  : m.kind === 'tool' ? '<span class="bdg bg-toolmove" style="font-size:10px">Tool</span>'
+                  : `<span class="bdg bg-gray" style="font-size:10px;margin-left:auto">${esc(m.truck || '')}</span>`;
+    return `<div class="move-row">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <strong style="font-size:12px">${esc(m.item_name)}</strong>
+        <span class="bdg ${sc}" style="font-size:10px">${sl}</span>
+        ${kindBdg}
+      </div>
+      <div style="font-size:11px;color:#666">${esc(m.from_loc || '')} → ${esc(m.to_loc)}${m.notes ? ' · <em>' + esc(m.notes) + '</em>' : ''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <span style="font-size:10px;color:#aaa">${ts}</span>${act}
+      </div>
+    </div>`;
+  };
+  targets.forEach(({ listId, sumId, kind }) => {
+    const list = document.getElementById(listId);
+    const sum = document.getElementById(sumId);
+    if (!list) return;
+    const filtered = MOVES.filter(m => m.kind === kind);
+    if (!filtered.length) {
+      list.innerHTML = '<div class="empty-msg" style="padding:1.5rem 0">No moves logged yet</div>';
+      if (sum) sum.textContent = '';
+      return;
+    }
+    const done = filtered.filter(m => m.status === 'complete').length;
+    const tr = filtered.filter(m => m.status === 'transit').length;
+    const q = filtered.filter(m => m.status === 'queued').length;
+    if (sum) sum.textContent = `${filtered.length} total · ${done} complete · ${tr} transit · ${q} queued`;
+    // Most recent first; cap at 50 for performance
+    const sorted = [...filtered].sort((a, b) => {
+      const ta = new Date(a.completed_at || a.transit_at || a.queued_at).getTime();
+      const tb = new Date(b.completed_at || b.transit_at || b.queued_at).getTime();
+      return tb - ta;
+    }).slice(0, 50);
+    list.innerHTML = sorted.map(rowHTML).join('');
+  });
+}
+
+function renderSites() {
+  const list = document.getElementById('sites-list');
+  const fv = document.getElementById('site-filter').value;
+  const sm = {};
+  EQ.forEach(eq => { if (!sm[eq.loc]) sm[eq.loc] = { eq:[], tools:[], att:[] }; sm[eq.loc].eq.push(eq); });
+  TOOLS.forEach(t => { if (!sm[t.loc]) sm[t.loc] = { eq:[], tools:[], att:[] }; sm[t.loc].tools.push(t); });
+  ATT.forEach(a => { if (!sm[a.loc]) sm[a.loc] = { eq:[], tools:[], att:[] }; sm[a.loc].att.push(a); });
+  const ib = {};
+  MOVES.filter(m => m.status !== 'complete').forEach(m => {
+    if (!ib[m.to_loc]) ib[m.to_loc] = []; ib[m.to_loc].push(m);
+  });
+  const sites = Object.entries(sm)
+    .filter(e => !fv || e[0] === fv)
+    .sort((a, b) => (b[1].eq.length + b[1].tools.length) - (a[1].eq.length + a[1].tools.length));
+  if (!sites.length) { list.innerHTML = '<div class="empty-msg">No equipment at this site</div>'; return; }
+  list.innerHTML = sites.map(([loc, d]) => {
+    const inb = ib[loc] || [];
+    const siteData = LOCS_FULL ? LOCS_FULL.find(l => l.name === loc) : null;
+const siteSlug = siteData ? siteData.slug : null;
+return `<div class="site-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <strong>${esc(loc)}</strong>
+        <button class="btn-sm" style="font-size:11px" onclick="openSiteQRModal('${esc(loc)}','${esc(siteSlug||'')}')">QR</button>
+      </div>
+      <strong>${esc(loc)}</strong>
+      ${d.eq.length ? `<div style="font-size:12px;color:#555;margin-top:4px">${d.eq.length} machine${d.eq.length!==1?'s':''}: ${d.eq.map(e=>esc(e.name)).join(', ')}</div>` : ''}
+      ${d.tools.length ? `<div style="font-size:12px;color:#0891b2;margin-top:2px">${d.tools.length} tool${d.tools.length!==1?'s':''}: ${d.tools.map(t=>esc(t.name)).join(', ')}</div>` : ''}
+      ${d.att.length ? `<div style="font-size:12px;color:#3C3489;margin-top:2px">${d.att.length} attachment${d.att.length!==1?'s':''}: ${d.att.map(a=>esc(a.name)).join(', ')}</div>` : ''}
+      ${inb.length ? `<div class="inbound-box">${inb.length} inbound: ${inb.map(m=>esc(m.item_name)+' ('+m.status+')').join(', ')}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  COPY LOG
+// ════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════════════
+//  RENAME ITEM
+// ════════════════════════════════════════════════════════════════════════════
+async function renameItem(id, kind, event) {
+  event.stopPropagation();
+  const arr = kind === 'equipment' ? EQ : kind === 'tool' ? TOOLS : ATT;
+  const item = arr.find(x => x.id === id);
+  if (!item) return;
+  const newName = prompt('Rename:', item.name);
+  if (!newName || newName.trim() === item.name) return;
+  const trimmed = newName.trim();
+  const table = kind === 'equipment' ? 'equipment' : kind === 'tool' ? 'tools' : 'attachments';
+  setSt('Saving…', 'sync-saving');
+  const { error } = await sb.from(table).update({ name: trimmed }).eq('id', id);
+  if (error) { setSt('Rename failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  item.name = trimmed;
+  setSt('Renamed ✓', 'sync-ok');
+  setTimeout(() => document.getElementById('sync-st').innerHTML = '<span class="live-dot"></span>Live', 2500);
+  renderAll();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  COLLAPSE PANEL
+// ════════════════════════════════════════════════════════════════════════════
+function togglePanel(bodyId, toggleEl) {
+  const body = document.getElementById(bodyId);
+  if (!body) return;
+  const collapsed = body.classList.toggle('collapsed');
+  toggleEl.textContent = collapsed ? '▸' : '▾';
+}
+
+function copyLog(kind) {
+  const filtered = kind ? MOVES.filter(m => m.kind === kind) : MOVES;
+  const lines = ['GA Delivery Planner — Move log ' + new Date().toLocaleDateString(), ''];
+  filtered.forEach(m => {
+    const t = m.completed_at || m.transit_at || m.queued_at;
+    lines.push(
+      new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+      + ' | ' + (m.status || '').toUpperCase()
+      + ' | ' + m.item_name
+      + ' | ' + (m.from_loc || '') + ' → ' + m.to_loc
+      + (m.notes ? ' | ' + m.notes : '')
+      + ' | ' + (m.kind === 'attachment' ? 'Attachment' : m.kind === 'tool' ? 'Tool' : (m.truck || ''))
+    );
+  });
+  navigator.clipboard.writeText(lines.join('\n'))
+    .then(() => alert('Log copied to clipboard'))
+    .catch(() => alert('Could not copy. Allow clipboard permission.'));
+}
+</script>
+</body>
+</html>
