@@ -350,6 +350,8 @@ textarea{resize:vertical;min-height:60px}
   <button class="tab" onclick="goTab('attach',this)">Attachments</button>
   <button class="tab" onclick="goTab('sites',this)">Sites</button>
   <button class="tab" onclick="goTab('orders',this)">Orders</button>
+  <button class="tab" onclick="goTab('bulk',this)">Bulk Stock</button>
+  <button class="tab" onclick="goTab('assets',this)">Assets</button>
 </div>
 
 <!-- EQUIPMENT TAB -->
@@ -524,6 +526,86 @@ textarea{resize:vertical;min-height:60px}
   </div>
   <div class="pills" id="order-pills"></div>
   <div id="order-list"><div class="empty-msg">Loading…</div></div>
+</div>
+
+<!-- BULK STOCK TAB -->
+<div id="tabpanel-bulk" class="tabpanel">
+  <div class="main-grid">
+    <div class="left-col">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-sm" style="flex:1" onclick="openModal('bulk-type')">+ Add item type</button>
+      </div>
+      <div class="pills" id="bulk-pills"></div>
+      <div id="bulk-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+    <div class="right-col">
+      <div class="panel-box">
+        <div class="panel-head"><span class="panel-head-title">Dispatch bulk material</span></div>
+        <div class="form-inner">
+          <label>Item type</label>
+          <select id="new-bulk-type" onchange="prefillBulkQty()"><option value="">— select item —</option></select>
+          <label>From</label>
+          <select id="new-bulk-from"><option value="">— select site —</option></select>
+          <label>To</label>
+          <select id="new-bulk-to"><option value="">— select site —</option></select>
+          <label>Qty</label>
+          <input type="number" id="new-bulk-qty" placeholder="0" min="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
+          <label>Notes</label>
+          <input type="text" id="new-bulk-notes" placeholder="Optional notes…">
+          <button class="btn" id="btn-dispatch-bulk" onclick="dispatchBulk()">Dispatch</button>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Transfer log</span>
+          <span class="collapse-toggle" onclick="togglePanel('bulk-log-body',this)">▾</span>
+        </div>
+        <div id="bulk-log-body" class="panel-body">
+          <div class="empty-msg" style="padding:1.5rem 0">No transfers yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ASSETS TAB -->
+<div id="tabpanel-assets" class="tabpanel">
+  <div class="main-grid">
+    <div class="left-col">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="btn-sm" style="flex:1" onclick="openModal('asset-type')">+ Add asset type</button>
+      </div>
+      <div class="pills" id="asset-pills"></div>
+      <div id="asset-list"><div class="empty-msg">Loading…</div></div>
+    </div>
+    <div class="right-col">
+      <div class="panel-box">
+        <div class="panel-head"><span class="panel-head-title">Move assets</span></div>
+        <div class="form-inner">
+          <label>Asset type</label>
+          <select id="new-asset-type"><option value="">— select asset —</option></select>
+          <label>From</label>
+          <select id="new-asset-from"><option value="">— select site —</option></select>
+          <label>To</label>
+          <select id="new-asset-to"><option value="">— select site —</option></select>
+          <label>Qty</label>
+          <input type="number" id="new-asset-qty" placeholder="0" min="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
+          <label>Notes</label>
+          <input type="text" id="new-asset-notes" placeholder="Optional notes…">
+          <button class="btn" id="btn-move-assets" onclick="moveAssets()">Queue move</button>
+        </div>
+      </div>
+      <div class="panel-box">
+        <div class="panel-head">
+          <span class="panel-head-title">Move log</span>
+          <span class="collapse-toggle" onclick="togglePanel('asset-log-body',this)">▾</span>
+        </div>
+        <div id="asset-log-body" class="panel-body">
+          <div class="empty-msg" style="padding:1.5rem 0">No moves yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 </div><!-- /wrap -->
@@ -728,6 +810,67 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ADD BULK ITEM TYPE -->
+<div class="modal-bg" id="modal-bulk-type">
+  <div class="modal">
+    <h2>Add bulk item type</h2>
+    <label>Name</label>
+    <input type="text" id="new-btype-name" placeholder="2x4 8ft, Plywood 3/4&quot;…">
+    <label>Unit</label>
+    <select id="new-btype-unit">
+      <option value="pc">pc</option>
+      <option value="sheet">sheet</option>
+      <option value="lf">lf</option>
+      <option value="bundle">bundle</option>
+    </select>
+    <label>Default bundle qty <span style="color:#aaa;font-weight:400">(optional)</span></label>
+    <input type="number" id="new-btype-bundle" placeholder="e.g. 50" min="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('bulk-type')">Cancel</button>
+      <button class="btn" id="btn-add-btype" onclick="addBulkItemType()">Add item type</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD ASSET TYPE -->
+<div class="modal-bg" id="modal-asset-type">
+  <div class="modal">
+    <h2>Add asset type</h2>
+    <label>Name</label>
+    <input type="text" id="new-atype-name" placeholder="Post Shore 6ft, Tower Frame…">
+    <label>Category</label>
+    <select id="new-atype-category">
+      <option value="shores">Shores</option>
+      <option value="towers">Towers</option>
+      <option value="panels">Panels</option>
+      <option value="hardware">Hardware</option>
+      <option value="other">Other</option>
+    </select>
+    <label>Total qty owned</label>
+    <input type="number" id="new-atype-qty" placeholder="0" min="0" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('asset-type')">Cancel</button>
+      <button class="btn" id="btn-add-atype" onclick="addAssetType()">Add asset type</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD BULK RETURN -->
+<div class="modal-bg" id="modal-bulk-return">
+  <div class="modal">
+    <h2>Record return</h2>
+    <div id="return-info" style="font-size:12px;color:#888;margin-bottom:4px"></div>
+    <label>Qty returned</label>
+    <input type="number" id="return-qty" placeholder="0" min="0" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
+    <label>Notes</label>
+    <input type="text" id="return-notes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('bulk-return')">Cancel</button>
+      <button class="btn" id="btn-record-return" onclick="recordBulkReturn()">Record return</button>
+    </div>
+  </div>
+</div>
+
 <!-- PRINT-ONLY SHELL -->
 <div id="print-shell"></div>
 
@@ -746,10 +889,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 //  STATE — single source of truth, kept in sync with DB via realtime
 // ════════════════════════════════════════════════════════════════════════════
 let EQ = [], TOOLS = [], ATT = [], LOCS = [], LOCS_FULL = [], MOVES = [], ORDERS = [];
+let BULK_TYPES = [], BULK_INV = [], BULK_TRANSFERS = [];
+let ASSET_TYPES = [], ASSET_INV = [], ASSET_MOVES = [];
 let MACHINE_TYPES = [], TOOL_TYPES = [], MOBS = [], STATUSES = [];
 let sel = null, selTool = null, selAttId = null;
 let condId = null, condKind = null;
 let eqLocFilter = null, toolLocFilter = null, attLocFilter = null, orderStatusFilter = null;
+let bulkSiteFilter = null, assetSiteFilter = null;
+let returningTransferId = null;
 const updatingStatus = new Set();
 let lastIds = { E: 0, T: 0, A: 0 };
 
@@ -869,7 +1016,8 @@ async function loadMobileItem(itemId) {
 async function loadAll() {
   setSt('Loading from database…', 'sync-neutral');
   try {
-    const [eq, tools, att, locs, mt, tt, mob, stat, mvs, orders] = await Promise.all([
+    const [eq, tools, att, locs, mt, tt, mob, stat, mvs, orders,
+           bt, bi, bx, at, ai, am] = await Promise.all([
       sb.from('equipment').select('*').order('id'),
       sb.from('tools').select('*').order('id'),
       sb.from('attachments').select('*').order('id'),
@@ -879,7 +1027,13 @@ async function loadAll() {
       sb.from('mobilization_options').select('name').order('sort_order').order('name'),
       sb.from('statuses').select('name').order('sort_order').order('name'),
       sb.from('moves').select('*').order('queued_at', { ascending: false }).limit(200),
-      sb.from('requests').select('*').order('requested_at', { ascending: false }).limit(200)
+      sb.from('requests').select('*').order('requested_at', { ascending: false }).limit(200),
+      sb.from('bulk_item_types').select('*').order('sort_order').order('name'),
+      sb.from('bulk_inventory').select('*'),
+      sb.from('bulk_transfers').select('*').order('dispatched_at', { ascending: false }).limit(200),
+      sb.from('asset_types').select('*').order('sort_order').order('name'),
+      sb.from('asset_inventory').select('*'),
+      sb.from('asset_moves').select('*').order('dispatched_at', { ascending: false }).limit(200)
     ]);
     for (const r of [eq, tools, att, locs, mt, tt, mob, stat, mvs]) {
       if (r.error) throw r.error;
@@ -895,6 +1049,12 @@ LOCS = LOCS_FULL.map(r => r.name);
     STATUSES = (stat.data || []).map(r => r.name);
     MOVES = mvs.data || [];
     ORDERS = orders.data || [];
+    BULK_TYPES = bt.data || [];
+    BULK_INV = bi.data || [];
+    BULK_TRANSFERS = bx.data || [];
+    ASSET_TYPES = at.data || [];
+    ASSET_INV = ai.data || [];
+    ASSET_MOVES = am.data || [];
     recomputeLastIds();
     setSt(`<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`, 'sync-ok');
     document.getElementById('sync-st').innerHTML = `<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`;
@@ -971,6 +1131,36 @@ LOCS = LOCS_FULL.map(x => x.name);
     .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' },
         handle('requests', () => ORDERS, () => { renderOrderPills(); renderOrders(); }))
     .subscribe();
+
+  sb.channel('bulk-type-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bulk_item_types' },
+        handle('bulk_item_types', () => BULK_TYPES, () => { rebuildBulkTypeSelect(); renderBulkPills(); renderBulk(); }))
+    .subscribe();
+
+  sb.channel('bulk-inv-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bulk_inventory' },
+        handle('bulk_inventory', () => BULK_INV, () => { renderBulkPills(); renderBulk(); }))
+    .subscribe();
+
+  sb.channel('bulk-xfer-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bulk_transfers' },
+        handle('bulk_transfers', () => BULK_TRANSFERS, () => { renderBulk(); renderBulkLog(); }))
+    .subscribe();
+
+  sb.channel('asset-type-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'asset_types' },
+        handle('asset_types', () => ASSET_TYPES, () => { rebuildAssetTypeSelect(); renderAssetPills(); renderAssets(); }))
+    .subscribe();
+
+  sb.channel('asset-inv-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'asset_inventory' },
+        handle('asset_inventory', () => ASSET_INV, () => { renderAssetPills(); renderAssets(); }))
+    .subscribe();
+
+  sb.channel('asset-move-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'asset_moves' },
+        handle('asset_moves', () => ASSET_MOVES, () => { renderAssets(); renderAssetLog(); }))
+    .subscribe();
 }
 
 // Re-show the right-panel detail boxes after data refreshes (locations, atts, etc.)
@@ -1002,7 +1192,8 @@ function buildDropdowns() {
   };
 
   // Locations
-  ['dest','tdest','new-eloc','new-tloc','new-aloc','attmove-dest','site-filter','new-osite']
+  ['dest','tdest','new-eloc','new-tloc','new-aloc','attmove-dest','site-filter','new-osite',
+   'new-bulk-from','new-bulk-to','new-asset-from','new-asset-to']
     .forEach(id => setOpts(id, LOCS, true));
   if (sf && prevSiteFilter && !LOCS.includes(prevSiteFilter)) sf.value = '';
 
@@ -1014,6 +1205,10 @@ function buildDropdowns() {
   setOpts('new-etruck', MOBS, false);
   setOpts('new-ttruck', MOBS, false);
   setOpts('new-otruck', MOBS, true);
+
+  // Bulk & asset type selects (id-keyed, rebuilt separately)
+  rebuildBulkTypeSelect();
+  rebuildAssetTypeSelect();
 
   // Statuses
   setOpts('new-estatus', STATUSES, false);
@@ -1462,6 +1657,8 @@ function renderAll() {
   renderLog();
   renderSites();
   renderOrderPills(); renderOrders();
+  renderBulkPills(); renderBulk(); renderBulkLog();
+  renderAssetPills(); renderAssets(); renderAssetLog();
 }
 
 function renderQ() {
@@ -1891,6 +2088,365 @@ async function deleteOrder(id) {
   const { error } = await sb.from('requests').delete().eq('id', id);
   if (error) { setSt('Delete failed: ' + error.message, 'sync-err'); return; }
   setSt('Request deleted ✓', 'sync-ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  BULK STOCK
+// ════════════════════════════════════════════════════════════════════════════
+function rebuildBulkTypeSelect() {
+  const el = document.getElementById('new-bulk-type');
+  if (!el) return;
+  const prev = el.value;
+  el.innerHTML = '<option value="">— select item —</option>';
+  BULK_TYPES.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name + (t.unit ? ' (' + t.unit + ')' : '');
+    el.appendChild(o);
+  });
+  if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+}
+
+function prefillBulkQty() {
+  const typeId = parseInt(document.getElementById('new-bulk-type').value);
+  const t = BULK_TYPES.find(x => x.id === typeId);
+  if (t && t.default_bundle_qty) {
+    document.getElementById('new-bulk-qty').value = t.default_bundle_qty;
+  }
+}
+
+function renderBulkPills() {
+  const c = document.getElementById('bulk-pills');
+  if (!c) return;
+  const sites = {};
+  BULK_INV.filter(r => r.qty > 0).forEach(r => { sites[r.site] = (sites[r.site] || 0) + 1; });
+  const keys = Object.keys(sites).sort();
+  if (keys.length <= 1) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!bulkSiteFilter ? ' active' : ''}" data-site="">All</button>`;
+  keys.forEach(k => {
+    html += `<button class="pill${bulkSiteFilter === k ? ' active' : ''}" data-site="${esc(k)}">${esc(k)}</button>`;
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    bulkSiteFilter = btn.dataset.site || null;
+    renderBulkPills(); renderBulk();
+  };
+}
+
+function renderBulk() {
+  const list = document.getElementById('bulk-list');
+  if (!list) return;
+  if (!BULK_TYPES.length) {
+    list.innerHTML = '<div class="empty-msg">No item types yet — add one above</div>'; return;
+  }
+  const rows = BULK_INV.filter(r => r.qty > 0 && (!bulkSiteFilter || r.site === bulkSiteFilter));
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty-msg">No inventory on record</div>'; return;
+  }
+  list.innerHTML = rows.map(r => {
+    const t = BULK_TYPES.find(x => x.id === r.item_type_id);
+    if (!t) return '';
+    return `<div class="att-card">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${esc(t.name)}</div>
+        <div style="font-size:11px;color:#555;margin-top:2px">📍 ${esc(r.site)}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:18px;font-weight:700;color:var(--text)">${r.qty}</div>
+        <div style="font-size:10px;color:#aaa">${esc(t.unit || 'pc')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderBulkLog() {
+  const body = document.getElementById('bulk-log-body');
+  if (!body) return;
+  if (!BULK_TRANSFERS.length) {
+    body.innerHTML = '<div class="empty-msg" style="padding:1.5rem 0">No transfers yet</div>'; return;
+  }
+  const statusCls = { out: 'bg-q', partial: 'bg-tr', returned: 'bg-done' };
+  const statusLabel = { out: 'Out', partial: 'Partial', returned: 'Returned' };
+  body.innerHTML = BULK_TRANSFERS.map(x => {
+    const sc = statusCls[x.status] || 'bg-gray';
+    const sl = statusLabel[x.status] || x.status;
+    const ts = new Date(x.dispatched_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const returnBtn = (x.status === 'out' || x.status === 'partial')
+      ? `<button class="btn-sm" onclick="openReturnModal(${x.id})" style="font-size:11px">Record return</button>`
+      : '';
+    const deltaLine = x.qty_returned != null
+      ? `<span style="font-size:11px;color:${x.delta > 0 ? '#c0392b' : '#27500A'}">Δ ${x.delta > 0 ? '+' : ''}${x.delta} ${esc(x.item_name || '')}</span>`
+      : '';
+    return `<div class="move-row">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+        <strong style="font-size:12px">${esc(x.item_name || '—')}</strong>
+        <span class="bdg ${sc}" style="font-size:10px">${sl}</span>
+        ${deltaLine}
+      </div>
+      <div style="font-size:11px;color:#666">${esc(x.from_site || '—')} → ${esc(x.to_site)} · ${x.qty_sent} sent${x.qty_returned != null ? ' · ' + x.qty_returned + ' returned' : ''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <span style="font-size:10px;color:#aaa">${ts}</span>${returnBtn}
+      </div>
+      ${x.notes ? `<div style="font-size:11px;font-style:italic;color:#888;margin-top:3px">${esc(x.notes)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function addBulkItemType() {
+  const name = document.getElementById('new-btype-name').value.trim();
+  const unit = document.getElementById('new-btype-unit').value || 'pc';
+  const bundleVal = document.getElementById('new-btype-bundle').value;
+  const default_bundle_qty = bundleVal ? parseInt(bundleVal) : null;
+  if (!name) { alert('Name is required.'); return; }
+  if (BULK_TYPES.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    alert('That item type already exists.'); return;
+  }
+  setBtn('btn-add-btype', true, 'Saving…');
+  setSt('Saving item type…', 'sync-saving');
+  const { error } = await sb.from('bulk_item_types').insert({ name, unit, default_bundle_qty });
+  setBtn('btn-add-btype', false, 'Add item type');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('bulk-type');
+  ['new-btype-name','new-btype-bundle'].forEach(i => document.getElementById(i).value = '');
+  setSt(name + ' added ✓', 'sync-ok');
+}
+
+async function dispatchBulk() {
+  const typeId = parseInt(document.getElementById('new-bulk-type').value);
+  const from_site = document.getElementById('new-bulk-from').value;
+  const to_site = document.getElementById('new-bulk-to').value;
+  const qty_sent = parseInt(document.getElementById('new-bulk-qty').value);
+  const notes = document.getElementById('new-bulk-notes').value.trim();
+  if (!typeId) { alert('Select an item type.'); return; }
+  if (!to_site) { alert('Select a destination.'); return; }
+  if (!qty_sent || qty_sent < 1) { alert('Enter a valid quantity.'); return; }
+  if (from_site && from_site === to_site) { alert('From and To cannot be the same site.'); return; }
+
+  const t = BULK_TYPES.find(x => x.id === typeId);
+  const item_name = t ? t.name : '';
+
+  setBtn('btn-dispatch-bulk', true, 'Dispatching…');
+  setSt('Dispatching…', 'sync-saving');
+
+  const { error: xErr } = await sb.from('bulk_transfers').insert({
+    item_type_id: typeId, item_name, from_site: from_site || null, to_site, qty_sent, notes, status: 'out'
+  });
+  if (xErr) { setBtn('btn-dispatch-bulk', false, 'Dispatch'); setSt('Failed: ' + xErr.message, 'sync-err'); alert(xErr.message); return; }
+
+  // Update inventory balances
+  if (from_site) {
+    const cur = (BULK_INV.find(r => r.item_type_id === typeId && r.site === from_site) || {}).qty || 0;
+    await sb.from('bulk_inventory').upsert([{ item_type_id: typeId, site: from_site, qty: Math.max(0, cur - qty_sent) }], { onConflict: 'item_type_id,site' });
+  }
+  const curTo = (BULK_INV.find(r => r.item_type_id === typeId && r.site === to_site) || {}).qty || 0;
+  await sb.from('bulk_inventory').upsert([{ item_type_id: typeId, site: to_site, qty: curTo + qty_sent }], { onConflict: 'item_type_id,site' });
+
+  setBtn('btn-dispatch-bulk', false, 'Dispatch');
+  document.getElementById('new-bulk-qty').value = '';
+  document.getElementById('new-bulk-notes').value = '';
+  setSt('Dispatched ✓', 'sync-ok');
+}
+
+function openReturnModal(id) {
+  const x = BULK_TRANSFERS.find(t => t.id === id);
+  if (!x) return;
+  returningTransferId = id;
+  document.getElementById('return-info').textContent =
+    (x.item_name || '—') + ' · ' + (x.from_site || '—') + ' → ' + x.to_site + ' · ' + x.qty_sent + ' sent';
+  document.getElementById('return-qty').value = '';
+  document.getElementById('return-notes').value = '';
+  openModal('bulk-return');
+}
+
+async function recordBulkReturn() {
+  const x = BULK_TRANSFERS.find(t => t.id === returningTransferId);
+  if (!x) return;
+  const qty_returned = parseInt(document.getElementById('return-qty').value);
+  const notes = document.getElementById('return-notes').value.trim();
+  if (isNaN(qty_returned) || qty_returned < 0) { alert('Enter a valid return qty.'); return; }
+
+  const delta = x.qty_sent - qty_returned;
+  const status = qty_returned >= x.qty_sent ? 'returned' : 'partial';
+
+  setBtn('btn-record-return', true, 'Saving…');
+  setSt('Recording return…', 'sync-saving');
+  const { error } = await sb.from('bulk_transfers').update({
+    qty_returned, delta, status, returned_at: new Date().toISOString(),
+    notes: notes || x.notes
+  }).eq('id', returningTransferId);
+  if (error) { setBtn('btn-record-return', false, 'Record return'); setSt('Failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+
+  // Reverse inventory: move qty_returned from to_site back to from_site
+  const curTo = (BULK_INV.find(r => r.item_type_id === x.item_type_id && r.site === x.to_site) || {}).qty || 0;
+  await sb.from('bulk_inventory').upsert([{ item_type_id: x.item_type_id, site: x.to_site, qty: Math.max(0, curTo - qty_returned) }], { onConflict: 'item_type_id,site' });
+  if (x.from_site) {
+    const curFrom = (BULK_INV.find(r => r.item_type_id === x.item_type_id && r.site === x.from_site) || {}).qty || 0;
+    await sb.from('bulk_inventory').upsert([{ item_type_id: x.item_type_id, site: x.from_site, qty: curFrom + qty_returned }], { onConflict: 'item_type_id,site' });
+  }
+
+  setBtn('btn-record-return', false, 'Record return');
+  closeModal('bulk-return');
+  setSt('Return recorded ✓', 'sync-ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ASSETS
+// ════════════════════════════════════════════════════════════════════════════
+function rebuildAssetTypeSelect() {
+  const el = document.getElementById('new-asset-type');
+  if (!el) return;
+  const prev = el.value;
+  el.innerHTML = '<option value="">— select asset —</option>';
+  ASSET_TYPES.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id; o.textContent = t.name + (t.category ? ' · ' + t.category : '');
+    el.appendChild(o);
+  });
+  if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+}
+
+function renderAssetPills() {
+  const c = document.getElementById('asset-pills');
+  if (!c) return;
+  const sites = {};
+  ASSET_INV.filter(r => r.qty > 0).forEach(r => { sites[r.site] = true; });
+  const keys = Object.keys(sites).sort();
+  if (keys.length <= 1) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!assetSiteFilter ? ' active' : ''}" data-site="">All</button>`;
+  keys.forEach(k => {
+    html += `<button class="pill${assetSiteFilter === k ? ' active' : ''}" data-site="${esc(k)}">${esc(k)}</button>`;
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    assetSiteFilter = btn.dataset.site || null;
+    renderAssetPills(); renderAssets();
+  };
+}
+
+function renderAssets() {
+  const list = document.getElementById('asset-list');
+  if (!list) return;
+  if (!ASSET_TYPES.length) {
+    list.innerHTML = '<div class="empty-msg">No asset types yet — add one above</div>'; return;
+  }
+  const rows = ASSET_INV.filter(r => r.qty > 0 && (!assetSiteFilter || r.site === assetSiteFilter));
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty-msg">No assets on record</div>'; return;
+  }
+  list.innerHTML = rows.map(r => {
+    const t = ASSET_TYPES.find(x => x.id === r.asset_type_id);
+    if (!t) return '';
+    return `<div class="att-card">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${esc(t.name)}</div>
+        <div style="font-size:11px;color:#555;margin-top:2px">📍 ${esc(r.site)}</div>
+        ${t.category ? `<div style="font-size:11px;color:#aaa">${esc(t.category)}</div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:18px;font-weight:700;color:var(--text)">${r.qty}</div>
+        <div style="font-size:10px;color:#aaa">of ${t.qty_total || '?'} total</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAssetLog() {
+  const body = document.getElementById('asset-log-body');
+  if (!body) return;
+  if (!ASSET_MOVES.length) {
+    body.innerHTML = '<div class="empty-msg" style="padding:1.5rem 0">No moves yet</div>'; return;
+  }
+  body.innerHTML = ASSET_MOVES.map(m => {
+    const isTr = m.status === 'dispatched';
+    const sc = isTr ? 'bg-tr' : 'bg-done';
+    const sl = isTr ? 'Dispatched' : 'Delivered';
+    const ts = new Date(m.dispatched_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const btn = isTr
+      ? `<button class="btn-sm primary" onclick="deliverAssets(${m.id})">Mark Delivered</button>`
+      : '';
+    return `<div class="move-row">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">
+        <strong style="font-size:12px">${esc(m.item_name || '—')}</strong>
+        <span class="bdg ${sc}" style="font-size:10px">${sl}</span>
+        <span style="font-size:11px;color:#888">${m.qty} pcs</span>
+      </div>
+      <div style="font-size:11px;color:#666">${esc(m.from_site || '—')} → ${esc(m.to_site)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+        <span style="font-size:10px;color:#aaa">${ts}</span>${btn}
+      </div>
+      ${m.notes ? `<div style="font-size:11px;font-style:italic;color:#888;margin-top:3px">${esc(m.notes)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function addAssetType() {
+  const name = document.getElementById('new-atype-name').value.trim();
+  const category = document.getElementById('new-atype-category').value;
+  const qty_total = parseInt(document.getElementById('new-atype-qty').value) || 0;
+  if (!name) { alert('Name is required.'); return; }
+  if (ASSET_TYPES.find(t => t.name.toLowerCase() === name.toLowerCase())) {
+    alert('That asset type already exists.'); return;
+  }
+  setBtn('btn-add-atype', true, 'Saving…');
+  setSt('Saving asset type…', 'sync-saving');
+  const { error } = await sb.from('asset_types').insert({ name, category, qty_total });
+  setBtn('btn-add-atype', false, 'Add asset type');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('asset-type');
+  ['new-atype-name'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('new-atype-qty').value = '';
+  setSt(name + ' added ✓', 'sync-ok');
+}
+
+async function moveAssets() {
+  const typeId = parseInt(document.getElementById('new-asset-type').value);
+  const from_site = document.getElementById('new-asset-from').value;
+  const to_site = document.getElementById('new-asset-to').value;
+  const qty = parseInt(document.getElementById('new-asset-qty').value);
+  const notes = document.getElementById('new-asset-notes').value.trim();
+  if (!typeId) { alert('Select an asset type.'); return; }
+  if (!to_site) { alert('Select a destination.'); return; }
+  if (!qty || qty < 1) { alert('Enter a valid quantity.'); return; }
+  if (from_site && from_site === to_site) { alert('From and To cannot be the same site.'); return; }
+  if (from_site) {
+    const avail = (ASSET_INV.find(r => r.asset_type_id === typeId && r.site === from_site) || {}).qty || 0;
+    if (qty > avail) { alert(`Only ${avail} available at that site.`); return; }
+  }
+
+  const t = ASSET_TYPES.find(x => x.id === typeId);
+  const item_name = t ? t.name : '';
+
+  setBtn('btn-move-assets', true, 'Saving…');
+  setSt('Queueing move…', 'sync-saving');
+
+  const { error: mErr } = await sb.from('asset_moves').insert({
+    asset_type_id: typeId, item_name, from_site: from_site || null, to_site, qty, notes, status: 'dispatched'
+  });
+  if (mErr) { setBtn('btn-move-assets', false, 'Queue move'); setSt('Failed: ' + mErr.message, 'sync-err'); alert(mErr.message); return; }
+
+  if (from_site) {
+    const cur = (ASSET_INV.find(r => r.asset_type_id === typeId && r.site === from_site) || {}).qty || 0;
+    await sb.from('asset_inventory').upsert([{ asset_type_id: typeId, site: from_site, qty: Math.max(0, cur - qty) }], { onConflict: 'asset_type_id,site' });
+  }
+  const curTo = (ASSET_INV.find(r => r.asset_type_id === typeId && r.site === to_site) || {}).qty || 0;
+  await sb.from('asset_inventory').upsert([{ asset_type_id: typeId, site: to_site, qty: curTo + qty }], { onConflict: 'asset_type_id,site' });
+
+  setBtn('btn-move-assets', false, 'Queue move');
+  document.getElementById('new-asset-qty').value = '';
+  document.getElementById('new-asset-notes').value = '';
+  setSt('Move queued ✓', 'sync-ok');
+}
+
+async function deliverAssets(id) {
+  setSt('Updating…', 'sync-saving');
+  const { error } = await sb.from('asset_moves').update({
+    status: 'delivered', delivered_at: new Date().toISOString()
+  }).eq('id', id);
+  if (error) { setSt('Update failed: ' + error.message, 'sync-err'); return; }
+  setSt('Delivered ✓', 'sync-ok');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
