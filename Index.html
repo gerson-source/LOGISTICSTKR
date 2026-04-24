@@ -349,6 +349,7 @@ textarea{resize:vertical;min-height:60px}
   <button class="tab" onclick="goTab('tools',this)">Tools</button>
   <button class="tab" onclick="goTab('attach',this)">Attachments</button>
   <button class="tab" onclick="goTab('sites',this)">Sites</button>
+  <button class="tab" onclick="goTab('orders',this)">Orders</button>
 </div>
 
 <!-- EQUIPMENT TAB -->
@@ -516,6 +517,15 @@ textarea{resize:vertical;min-height:60px}
   <div id="sites-list"></div>
 </div>
 
+<!-- ORDERS TAB -->
+<div id="tabpanel-orders" class="tabpanel">
+  <div style="display:flex;gap:6px;margin-bottom:10px">
+    <button class="btn-sm" style="flex:1" onclick="openAddModal('order')">+ New order</button>
+  </div>
+  <div class="pills" id="order-pills"></div>
+  <div id="order-list"><div class="empty-msg">Loading…</div></div>
+</div>
+
 </div><!-- /wrap -->
 
 <!-- ═══ MODALS ═════════════════════════════════════════════════════════════ -->
@@ -677,6 +687,37 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<!-- ADD ORDER -->
+<div class="modal-bg" id="modal-order">
+  <div class="modal">
+    <h2>New order</h2>
+    <label>ID (e.g. O-001)</label>
+    <div style="display:flex;gap:6px;align-items:center">
+      <input type="text" id="new-oid" placeholder="O-001" style="flex:1">
+      <button class="btn-sm" onclick="autoId('order')" style="white-space:nowrap;flex-shrink:0;font-size:11px">↻ Auto</button>
+    </div>
+    <label>Title / Description</label>
+    <input type="text" id="new-otitle" placeholder="What's being ordered…">
+    <label>Site / Destination</label>
+    <select id="new-osite"><option value="">— select site —</option></select>
+    <label>Items</label>
+    <textarea id="new-oitems" placeholder="List of items, quantities…"></textarea>
+    <label>Priority</label>
+    <select id="new-opriority">
+      <option value="Normal">Normal</option>
+      <option value="Low">Low</option>
+      <option value="High">High</option>
+      <option value="Urgent">Urgent</option>
+    </select>
+    <label>Notes</label>
+    <input type="text" id="new-onotes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('order')">Cancel</button>
+      <button class="btn" id="btn-add-order" onclick="addOrder()">Create order</button>
+    </div>
+  </div>
+</div>
+
 <!-- PRINT-ONLY SHELL -->
 <div id="print-shell"></div>
 
@@ -694,13 +735,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 // ════════════════════════════════════════════════════════════════════════════
 //  STATE — single source of truth, kept in sync with DB via realtime
 // ════════════════════════════════════════════════════════════════════════════
-let EQ = [], TOOLS = [], ATT = [], LOCS = [], LOCS_FULL = [], MOVES = [];
+let EQ = [], TOOLS = [], ATT = [], LOCS = [], LOCS_FULL = [], MOVES = [], ORDERS = [];
 let MACHINE_TYPES = [], TOOL_TYPES = [], MOBS = [], STATUSES = [];
 let sel = null, selTool = null, selAttId = null;
 let condId = null, condKind = null;
-let eqLocFilter = null, toolLocFilter = null, attLocFilter = null;
+let eqLocFilter = null, toolLocFilter = null, attLocFilter = null, orderStatusFilter = null;
 const updatingStatus = new Set();
-let lastIds = { E: 0, T: 0, A: 0 };
+let lastIds = { E: 0, T: 0, A: 0, O: 0 };
 
 // ════════════════════════════════════════════════════════════════════════════
 //  HELPERS
@@ -729,10 +770,11 @@ function generateNextId(prefix, arr) {
   return prefix + '-' + String(max + 1).padStart(3, '0');
 }
 function recomputeLastIds() {
-  lastIds = { E: 0, T: 0, A: 0 };
+  lastIds = { E: 0, T: 0, A: 0, O: 0 };
   EQ.forEach(e => { const n = _idNum('E', e.id); if (n > lastIds.E) lastIds.E = n; });
   TOOLS.forEach(t => { const n = _idNum('T', t.id); if (n > lastIds.T) lastIds.T = n; });
   ATT.forEach(a => { const n = _idNum('A', a.id); if (n > lastIds.A) lastIds.A = n; });
+  ORDERS.forEach(o => { const n = _idNum('O', o.id); if (n > lastIds.O) lastIds.O = n; });
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -818,7 +860,7 @@ async function loadMobileItem(itemId) {
 async function loadAll() {
   setSt('Loading from database…', 'sync-neutral');
   try {
-    const [eq, tools, att, locs, mt, tt, mob, stat, mvs] = await Promise.all([
+    const [eq, tools, att, locs, mt, tt, mob, stat, mvs, orders] = await Promise.all([
       sb.from('equipment').select('*').order('id'),
       sb.from('tools').select('*').order('id'),
       sb.from('attachments').select('*').order('id'),
@@ -827,7 +869,8 @@ async function loadAll() {
       sb.from('tool_types').select('name').order('sort_order').order('name'),
       sb.from('mobilization_options').select('name').order('sort_order').order('name'),
       sb.from('statuses').select('name').order('sort_order').order('name'),
-      sb.from('moves').select('*').order('queued_at', { ascending: false }).limit(200)
+      sb.from('moves').select('*').order('queued_at', { ascending: false }).limit(200),
+      sb.from('orders').select('*').order('created_at', { ascending: false }).limit(200)
     ]);
     for (const r of [eq, tools, att, locs, mt, tt, mob, stat, mvs]) {
       if (r.error) throw r.error;
@@ -842,6 +885,7 @@ LOCS = LOCS_FULL.map(r => r.name);
     MOBS = (mob.data || []).map(r => r.name);
     STATUSES = (stat.data || []).map(r => r.name);
     MOVES = mvs.data || [];
+    ORDERS = orders.data || [];
     recomputeLastIds();
     setSt(`<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`, 'sync-ok');
     document.getElementById('sync-st').innerHTML = `<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`;
@@ -913,6 +957,11 @@ LOCS = LOCS_FULL.map(x => x.name);
       renderQ(); renderLog(); renderEq(); renderTools(); renderAtt(); renderSites();
     })
     .subscribe();
+
+  sb.channel('orders-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },
+        handle('orders', () => ORDERS, () => { recomputeLastIds(); renderOrderPills(); renderOrders(); }))
+    .subscribe();
 }
 
 // Re-show the right-panel detail boxes after data refreshes (locations, atts, etc.)
@@ -944,7 +993,7 @@ function buildDropdowns() {
   };
 
   // Locations
-  ['dest','tdest','new-eloc','new-tloc','new-aloc','attmove-dest','site-filter']
+  ['dest','tdest','new-eloc','new-tloc','new-aloc','attmove-dest','site-filter','new-osite']
     .forEach(id => setOpts(id, LOCS, true));
   if (sf && prevSiteFilter && !LOCS.includes(prevSiteFilter)) sf.value = '';
 
@@ -991,13 +1040,13 @@ document.querySelectorAll('.modal-bg').forEach(bg => {
   bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); });
 });
 function openAddModal(kind) {
-  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT] };
+  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT], order: ['new-oid','O',ORDERS] };
   const [inp, pre, arr] = m[kind];
   document.getElementById(inp).value = generateNextId(pre, arr);
   openModal(kind);
 }
 function autoId(kind) {
-  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT] };
+  const m = { eq: ['new-eid','E',EQ], tool: ['new-tid','T',TOOLS], att: ['new-aid','A',ATT], order: ['new-oid','O',ORDERS] };
   const [inp, pre, arr] = m[kind];
   document.getElementById(inp).value = generateNextId(pre, arr);
 }
@@ -1401,6 +1450,7 @@ function renderAll() {
   renderAttPills(); renderAtt();
   renderLog();
   renderSites();
+  renderOrderPills(); renderOrders();
 }
 
 function renderQ() {
@@ -1683,6 +1733,119 @@ return `<div class="site-card">
       ${inb.length ? `<div class="inbound-box">${inb.length} inbound: ${inb.map(m=>esc(m.item_name)+' ('+m.status+')').join(', ')}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  ORDERS
+// ════════════════════════════════════════════════════════════════════════════
+function renderOrderPills() {
+  const c = document.getElementById('order-pills');
+  if (!c) return;
+  const statuses = ['Pending', 'In Progress', 'Delivered', 'Cancelled'];
+  const counts = {};
+  ORDERS.forEach(o => { counts[o.status] = (counts[o.status] || 0) + 1; });
+  const hasFiltered = statuses.some(s => counts[s]);
+  if (!hasFiltered) { c.innerHTML = ''; return; }
+  let html = `<button class="pill${!orderStatusFilter ? ' active' : ''}" data-status="">All <span style="font-size:10px;opacity:.6">${ORDERS.length}</span></button>`;
+  statuses.forEach(s => {
+    if (counts[s]) {
+      html += `<button class="pill${orderStatusFilter === s ? ' active' : ''}" data-status="${esc(s)}">${esc(s)} <span style="font-size:10px;opacity:.6">${counts[s]}</span></button>`;
+    }
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    orderStatusFilter = btn.dataset.status || null;
+    renderOrderPills(); renderOrders();
+  };
+}
+
+function renderOrders() {
+  const list = document.getElementById('order-list');
+  if (!list) return;
+  if (!ORDERS.length) { list.innerHTML = '<div class="empty-msg">No orders yet</div>'; return; }
+  const filtered = orderStatusFilter ? ORDERS.filter(o => o.status === orderStatusFilter) : ORDERS;
+  if (!filtered.length) { list.innerHTML = '<div class="empty-msg">No orders with this status</div>'; return; }
+
+  const statusCls = s => {
+    if (s === 'Pending') return 'bg-q';
+    if (s === 'In Progress') return 'bg-tr';
+    if (s === 'Delivered') return 'bg-done';
+    return 'bg-gray';
+  };
+  const priStyle = p => {
+    if (p === 'Urgent') return 'background:#FECACA;color:#991B1B';
+    if (p === 'High') return 'background:#FAEEDA;color:#633806';
+    if (p === 'Low') return 'background:#f0f0ee;color:#888';
+    return '';
+  };
+
+  list.innerHTML = filtered.map(o => {
+    const sc = statusCls(o.status);
+    const ps = priStyle(o.priority);
+    const nextBtn = o.status === 'Pending'
+      ? `<button class="btn-sm" onclick="updateOrderStatus('${esc(o.id)}','In Progress')">Start</button>`
+      : o.status === 'In Progress'
+      ? `<button class="btn-sm primary" onclick="updateOrderStatus('${esc(o.id)}','Delivered')">Mark Delivered</button>`
+      : '';
+    const cancelBtn = (o.status !== 'Delivered' && o.status !== 'Cancelled')
+      ? `<button class="btn-sm" onclick="updateOrderStatus('${esc(o.id)}','Cancelled')" style="color:#c0392b">Cancel</button>`
+      : '';
+    return `<div class="eq-card">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
+          <strong style="font-size:13px">${esc(o.title)}</strong>
+          <span class="bdg ${sc}" style="font-size:10px">${esc(o.status)}</span>
+          ${o.priority && o.priority !== 'Normal' ? `<span class="bdg" style="font-size:10px;${ps}">${esc(o.priority)}</span>` : ''}
+        </div>
+        ${o.site ? `<div style="font-size:11px;color:#555">📍 ${esc(o.site)}</div>` : ''}
+        ${o.items ? `<div style="font-size:11px;color:#777;margin-top:2px;white-space:pre-line">${esc(o.items)}</div>` : ''}
+        ${o.notes ? `<div style="font-size:11px;font-style:italic;color:#888;margin-top:1px">${esc(o.notes)}</div>` : ''}
+        <div style="font-size:10px;color:#bbb;margin-top:3px">${esc(o.id)}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+          ${nextBtn}${cancelBtn}
+          <button class="btn-sm" onclick="deleteOrder('${esc(o.id)}')" style="color:#c0392b;margin-left:auto">✕ Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addOrder() {
+  const id = document.getElementById('new-oid').value.trim();
+  const title = document.getElementById('new-otitle').value.trim();
+  const site = document.getElementById('new-osite').value;
+  const items = document.getElementById('new-oitems').value.trim();
+  const priority = document.getElementById('new-opriority').value || 'Normal';
+  const notes = document.getElementById('new-onotes').value.trim();
+  if (!id || !title) { alert('ID and title are required.'); return; }
+  if (ORDERS.find(o => o.id === id)) { alert('That ID already exists.'); return; }
+
+  setBtn('btn-add-order', true, 'Saving…');
+  setSt('Saving order…', 'sync-saving');
+  const { error } = await sb.from('orders').insert({ id, title, site, items, priority, notes, status: 'Pending' });
+  setBtn('btn-add-order', false, 'Create order');
+  if (error) { setSt('Save failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('order');
+  ['new-oid','new-otitle','new-oitems','new-onotes'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('new-opriority').value = 'Normal';
+  setSt(title + ' saved ✓', 'sync-ok');
+}
+
+async function updateOrderStatus(id, status) {
+  setSt('Updating order…', 'sync-saving');
+  const { error } = await sb.from('orders').update({ status }).eq('id', id);
+  if (error) { setSt('Update failed: ' + error.message, 'sync-err'); return; }
+  setSt('Order updated ✓', 'sync-ok');
+}
+
+async function deleteOrder(id) {
+  if (!confirm('Delete this order?')) return;
+  setSt('Deleting order…', 'sync-saving');
+  const { error } = await sb.from('orders').delete().eq('id', id);
+  if (error) { setSt('Delete failed: ' + error.message, 'sync-err'); return; }
+  setSt('Order deleted ✓', 'sync-ok');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
