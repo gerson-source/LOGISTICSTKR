@@ -355,6 +355,7 @@ textarea{resize:vertical;min-height:60px}
   <button class="tab" onclick="goTab('orders',this)">Orders</button>
   <button class="tab" onclick="goTab('bulk',this)">Bulk Stock</button>
   <button class="tab" onclick="goTab('assets',this)">Assets</button>
+  <button class="tab" onclick="goTab('runs',this)">Runs</button>
 </div>
 
 <!-- EQUIPMENT TAB -->
@@ -384,6 +385,8 @@ textarea{resize:vertical;min-height:60px}
             <select id="dest"><option value="">— select destination —</option></select>
             <label>Notes</label>
             <input type="text" id="notes" placeholder="Optional notes…">
+            <label>Add to run <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <select id="eq-run-id"><option value="">— no run —</option></select>
             <button class="btn" id="btn-queue-eq" onclick="queueMove()">Queue move</button>
           </div>
         </div>
@@ -442,6 +445,8 @@ textarea{resize:vertical;min-height:60px}
             <select id="tdest"><option value="">— select destination —</option></select>
             <label>Notes</label>
             <input type="text" id="tnotes" placeholder="Optional notes…">
+            <label>Add to run <span style="color:#aaa;font-weight:400">(optional)</span></label>
+            <select id="tool-run-id"><option value="">— no run —</option></select>
             <button class="btn" id="btn-queue-tool" onclick="queueToolMove()">Queue move</button>
           </div>
         </div>
@@ -555,6 +560,8 @@ textarea{resize:vertical;min-height:60px}
           <input type="number" id="new-bulk-qty" placeholder="0" min="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
           <label>Notes</label>
           <input type="text" id="new-bulk-notes" placeholder="Optional notes…">
+          <label>Add to run <span style="color:#aaa;font-weight:400">(optional)</span></label>
+          <select id="bulk-run-id"><option value="">— no run —</option></select>
           <button class="btn" id="btn-dispatch-bulk" onclick="dispatchBulk()">Dispatch</button>
         </div>
       </div>
@@ -595,6 +602,8 @@ textarea{resize:vertical;min-height:60px}
           <input type="number" id="new-asset-qty" placeholder="0" min="1" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;background:var(--input-bg);color:var(--text)">
           <label>Notes</label>
           <input type="text" id="new-asset-notes" placeholder="Optional notes…">
+          <label>Add to run <span style="color:#aaa;font-weight:400">(optional)</span></label>
+          <select id="asset-run-id"><option value="">— no run —</option></select>
           <button class="btn" id="btn-move-assets" onclick="moveAssets()">Queue move</button>
         </div>
       </div>
@@ -609,6 +618,15 @@ textarea{resize:vertical;min-height:60px}
       </div>
     </div>
   </div>
+</div>
+
+<!-- RUNS TAB -->
+<div id="tabpanel-runs" class="tabpanel">
+  <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center">
+    <button class="btn-sm" style="flex:1" onclick="openModal('run')">+ Plan new run</button>
+  </div>
+  <div class="pills" id="run-status-pills"></div>
+  <div id="runs-list"><div class="empty-msg">Loading…</div></div>
 </div>
 
 </div><!-- /wrap -->
@@ -725,6 +743,8 @@ textarea{resize:vertical;min-height:60px}
     <select id="attmove-paired"><option value="">Shared / unpaired</option></select>
     <label>Notes</label>
     <input type="text" id="attmove-notes" placeholder="Optional notes…">
+    <label>Add to run <span style="color:#aaa;font-weight:400">(optional)</span></label>
+    <select id="attmove-run-id"><option value="">— no run —</option></select>
     <div class="modal-footer">
       <button class="btn-outline" onclick="closeModal('attmove')">Cancel</button>
       <button class="btn" id="btn-queue-att" onclick="queueAttMove()">Queue move</button>
@@ -875,6 +895,25 @@ textarea{resize:vertical;min-height:60px}
 </div>
 
 <!-- PRINT-ONLY SHELL -->
+<!-- PLAN NEW RUN -->
+<div class="modal-bg" id="modal-run">
+  <div class="modal">
+    <h2>Plan a run</h2>
+    <label>Truck</label>
+    <select id="new-run-truck"><option value="">— select truck —</option></select>
+    <label>Driver name</label>
+    <input type="text" id="new-run-driver" placeholder="Driver name…">
+    <label>Planned date</label>
+    <input type="date" id="new-run-date">
+    <label>Notes</label>
+    <input type="text" id="new-run-notes" placeholder="Optional notes…">
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('run')">Cancel</button>
+      <button class="btn" id="btn-add-run" onclick="createRun()">Create run</button>
+    </div>
+  </div>
+</div>
+
 <div id="print-shell"></div>
 
 <!-- Supabase JS client -->
@@ -894,8 +933,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let EQ = [], TOOLS = [], ATT = [], LOCS = [], LOCS_FULL = [], MOVES = [], ORDERS = [];
 let BULK_TYPES = [], BULK_INV = [], BULK_TRANSFERS = [];
 let ASSET_TYPES = [], ASSET_INV = [], ASSET_MOVES = [];
+let RUNS = [];
 let MACHINE_TYPES = [], TOOL_TYPES = [], MOBS = [], STATUSES = [];
 let sel = null, selTool = null, selAttId = null;
+let runStatusFilter = null;
 let condId = null, condKind = null;
 let eqLocFilter = null, toolLocFilter = null, attLocFilter = null, orderStatusFilter = null;
 let bulkSiteFilter = null, assetSiteFilter = null;
@@ -934,6 +975,51 @@ function recomputeLastIds() {
   EQ.forEach(e => { const n = _idNum('E', e.id); if (n > lastIds.E) lastIds.E = n; });
   TOOLS.forEach(t => { const n = _idNum('T', t.id); if (n > lastIds.T) lastIds.T = n; });
   ATT.forEach(a => { const n = _idNum('A', a.id); if (n > lastIds.A) lastIds.A = n; });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  RUN PLANNER — PURE LOGIC (mirrors logic.js for Vitest; kept inline so the
+//  non-module <script> tag does not need converting)
+// ════════════════════════════════════════════════════════════════════════════
+function getRunItems(runId, moves, bulkTransfers, assetMoves) {
+  return {
+    moves:         moves.filter(m => m.run_id === runId),
+    bulkTransfers: bulkTransfers.filter(x => x.run_id === runId),
+    assetMoves:    assetMoves.filter(a => a.run_id === runId),
+  };
+}
+function deriveRunStatus(runId, moves, bulkTransfers, assetMoves) {
+  const items = getRunItems(runId, moves, bulkTransfers, assetMoves);
+  const all = [
+    ...items.moves.map(m => m.status),
+    ...items.bulkTransfers.map(x => x.status),
+    ...items.assetMoves.map(a => a.status),
+  ];
+  if (all.length === 0) return 'planned';
+  const terminal = s => s === 'complete' || s === 'returned' || s === 'delivered';
+  const active   = s => s === 'transit'  || s === 'out'      || s === 'partial' || s === 'dispatched';
+  if (all.every(terminal)) return 'complete';
+  if (all.some(active))    return 'dispatched';
+  return 'planned';
+}
+function isRunDispatchable(runId, moves, bulkTransfers, assetMoves) {
+  const items = getRunItems(runId, moves, bulkTransfers, assetMoves);
+  const total = items.moves.length + items.bulkTransfers.length + items.assetMoves.length;
+  if (total === 0) return false;
+  const anyTerminal = [...items.moves, ...items.bulkTransfers, ...items.assetMoves]
+    .some(i => i.status === 'complete' || i.status === 'returned' || i.status === 'delivered');
+  const anyTransit = items.moves.some(m => m.status === 'transit');
+  return !anyTerminal && !anyTransit;
+}
+function isRunComplete(runId, moves, bulkTransfers, assetMoves) {
+  const items = getRunItems(runId, moves, bulkTransfers, assetMoves);
+  const total = items.moves.length + items.bulkTransfers.length + items.assetMoves.length;
+  if (total === 0) return false;
+  return (
+    items.moves.every(m => m.status === 'complete') &&
+    items.bulkTransfers.every(x => x.status === 'returned') &&
+    items.assetMoves.every(a => a.status === 'delivered')
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1020,7 +1106,7 @@ async function loadAll() {
   setSt('Loading from database…', 'sync-neutral');
   try {
     const [eq, tools, att, locs, mt, tt, mob, stat, mvs, orders,
-           bt, bi, bx, at, ai, am] = await Promise.all([
+           bt, bi, bx, at, ai, am, rns] = await Promise.all([
       sb.from('equipment').select('*').order('id'),
       sb.from('tools').select('*').order('id'),
       sb.from('attachments').select('*').order('id'),
@@ -1036,7 +1122,8 @@ async function loadAll() {
       sb.from('bulk_transfers').select('*').order('dispatched_at', { ascending: false }).limit(200),
       sb.from('asset_types').select('*').order('sort_order').order('name'),
       sb.from('asset_inventory').select('*'),
-      sb.from('asset_moves').select('*').order('dispatched_at', { ascending: false }).limit(200)
+      sb.from('asset_moves').select('*').order('dispatched_at', { ascending: false }).limit(200),
+      sb.from('runs').select('*').order('planned_date', { ascending: false }).order('created_at', { ascending: false }).limit(100)
     ]);
     for (const r of [eq, tools, att, locs, mt, tt, mob, stat, mvs]) {
       if (r.error) throw r.error;
@@ -1045,7 +1132,7 @@ async function loadAll() {
     TOOLS = tools.data || [];
     ATT = att.data || [];
     LOCS_FULL = locs.data || [];
-LOCS = LOCS_FULL.map(r => r.name);
+    LOCS = LOCS_FULL.map(r => r.name);
     MACHINE_TYPES = (mt.data || []).map(r => r.name);
     TOOL_TYPES = (tt.data || []).map(r => r.name);
     MOBS = (mob.data || []).map(r => r.name);
@@ -1058,6 +1145,7 @@ LOCS = LOCS_FULL.map(r => r.name);
     ASSET_TYPES = at.data || [];
     ASSET_INV = ai.data || [];
     ASSET_MOVES = am.data || [];
+    RUNS = rns.data || [];
     recomputeLastIds();
     setSt(`<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`, 'sync-ok');
     document.getElementById('sync-st').innerHTML = `<span class="live-dot"></span>Live · ${EQ.length} machines · ${TOOLS.length} tools · ${ATT.length} attachments`;
@@ -1164,6 +1252,11 @@ LOCS = LOCS_FULL.map(x => x.name);
     .on('postgres_changes', { event: '*', schema: 'public', table: 'asset_moves' },
         handle('asset_moves', () => ASSET_MOVES, () => { renderAssets(); renderAssetLog(); }))
     .subscribe();
+
+  sb.channel('runs-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'runs' },
+        handle('runs', () => RUNS, () => { renderRunStatusPills(); renderRuns(); buildDropdowns(); }))
+    .subscribe();
 }
 
 // Re-show the right-panel detail boxes after data refreshes (locations, atts, etc.)
@@ -1227,6 +1320,25 @@ function buildDropdowns() {
     EQ.forEach(eq => {
       const o = document.createElement('option');
       o.value = eq.id; o.textContent = eq.name + ' (' + eq.id + ')';
+      el.appendChild(o);
+    });
+    if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
+  });
+
+  // Truck dropdown in Plan-a-run modal
+  setOpts('new-run-truck', MOBS, true);
+
+  // "Add to run" selects in all move forms — show only non-complete runs
+  ['eq-run-id','tool-run-id','attmove-run-id','bulk-run-id','asset-run-id'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const prev = el.value;
+    el.innerHTML = '<option value="">— no run —</option>';
+    RUNS.filter(r => r.status !== 'complete').forEach(r => {
+      const o = document.createElement('option');
+      o.value = r.id;
+      const dateStr = r.planned_date ? ' · ' + r.planned_date : '';
+      o.textContent = (r.truck || 'Unassigned') + (r.driver ? ' / ' + r.driver : '') + dateStr;
       el.appendChild(o);
     });
     if (prev && [...el.options].some(o => o.value === prev)) el.value = prev;
@@ -1453,17 +1565,19 @@ async function queueMove() {
   const eq = EQ.find(e => e.id === sel);
   setBtn('btn-queue-eq', true, 'Queueing…');
   setSt('Queueing move…', 'sync-saving');
+  const runId = parseInt(document.getElementById('eq-run-id').value) || null;
   const { error } = await sb.from('moves').insert({
     kind: 'equipment',
     item_id: eq.id, item_name: eq.name, item_type: eq.type, truck: eq.truck,
     from_loc: eq.loc, to_loc: dest,
     notes: document.getElementById('notes').value.trim(),
-    status: 'queued'
+    status: 'queued', run_id: runId
   });
   setBtn('btn-queue-eq', false, 'Queue move');
   if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
   document.getElementById('notes').value = '';
   document.getElementById('dest').value = '';
+  document.getElementById('eq-run-id').value = '';
   setSt('Move queued ✓', 'sync-ok');
 }
 
@@ -1474,17 +1588,19 @@ async function queueToolMove() {
   const tool = TOOLS.find(t => t.id === selTool);
   setBtn('btn-queue-tool', true, 'Queueing…');
   setSt('Queueing tool move…', 'sync-saving');
+  const runId = parseInt(document.getElementById('tool-run-id').value) || null;
   const { error } = await sb.from('moves').insert({
     kind: 'tool',
     item_id: tool.id, item_name: tool.name, item_type: tool.type, truck: tool.truck,
     from_loc: tool.loc, to_loc: dest,
     notes: document.getElementById('tnotes').value.trim(),
-    status: 'queued'
+    status: 'queued', run_id: runId
   });
   setBtn('btn-queue-tool', false, 'Queue move');
   if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
   document.getElementById('tnotes').value = '';
   document.getElementById('tdest').value = '';
+  document.getElementById('tool-run-id').value = '';
   setSt('Tool move queued ✓', 'sync-ok');
 }
 
@@ -1511,12 +1627,13 @@ async function queueAttMove() {
   const paired = document.getElementById('attmove-paired').value || '(shared)';
   setBtn('btn-queue-att', true, 'Queueing…');
   setSt('Queueing attachment move…', 'sync-saving');
+  const runId = parseInt(document.getElementById('attmove-run-id').value) || null;
   const { error } = await sb.from('moves').insert({
     kind: 'attachment',
     item_id: att.id, item_name: att.name,
     from_loc: att.loc, to_loc: dest, paired,
     notes: document.getElementById('attmove-notes').value.trim(),
-    status: 'queued'
+    status: 'queued', run_id: runId
   });
   setBtn('btn-queue-att', false, 'Queue move');
   if (error) { setSt('Queue failed: ' + error.message, 'sync-err'); alert(error.message); return; }
@@ -1662,6 +1779,7 @@ function renderAll() {
   renderOrderPills(); renderOrders();
   renderBulkPills(); renderBulk(); renderBulkLog();
   renderAssetPills(); renderAssets(); renderAssetLog();
+  renderRunStatusPills(); renderRuns();
 }
 
 function renderQ() {
@@ -2232,8 +2350,9 @@ async function dispatchBulk() {
   setBtn('btn-dispatch-bulk', true, 'Dispatching…');
   setSt('Dispatching…', 'sync-saving');
 
+  const runId = parseInt(document.getElementById('bulk-run-id').value) || null;
   const { error: xErr } = await sb.from('bulk_transfers').insert({
-    item_type_id: typeId, item_name, from_site: from_site || null, to_site, qty_sent, notes, status: 'out'
+    item_type_id: typeId, item_name, from_site: from_site || null, to_site, qty_sent, notes, status: 'out', run_id: runId
   });
   if (xErr) { setBtn('btn-dispatch-bulk', false, 'Dispatch'); setSt('Failed: ' + xErr.message, 'sync-err'); alert(xErr.message); return; }
 
@@ -2425,8 +2544,9 @@ async function moveAssets() {
   setBtn('btn-move-assets', true, 'Saving…');
   setSt('Queueing move…', 'sync-saving');
 
+  const runId = parseInt(document.getElementById('asset-run-id').value) || null;
   const { error: mErr } = await sb.from('asset_moves').insert({
-    asset_type_id: typeId, item_name, from_site: from_site || null, to_site, qty, notes, status: 'dispatched'
+    asset_type_id: typeId, item_name, from_site: from_site || null, to_site, qty, notes, status: 'dispatched', run_id: runId
   });
   if (mErr) { setBtn('btn-move-assets', false, 'Queue move'); setSt('Failed: ' + mErr.message, 'sync-err'); alert(mErr.message); return; }
 
@@ -2440,6 +2560,7 @@ async function moveAssets() {
   setBtn('btn-move-assets', false, 'Queue move');
   document.getElementById('new-asset-qty').value = '';
   document.getElementById('new-asset-notes').value = '';
+  document.getElementById('asset-run-id').value = '';
   setSt('Move queued ✓', 'sync-ok');
 }
 
@@ -2450,6 +2571,178 @@ async function deliverAssets(id) {
   }).eq('id', id);
   if (error) { setSt('Update failed: ' + error.message, 'sync-err'); return; }
   setSt('Delivered ✓', 'sync-ok');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+//  RUN PLANNER — DB OPERATIONS & RENDER
+// ════════════════════════════════════════════════════════════════════════════
+async function createRun() {
+  const truck  = document.getElementById('new-run-truck').value;
+  const driver = document.getElementById('new-run-driver').value.trim();
+  const planned_date = document.getElementById('new-run-date').value || null;
+  const notes  = document.getElementById('new-run-notes').value.trim();
+  if (!truck) { alert('Select a truck.'); return; }
+
+  setBtn('btn-add-run', true, 'Creating…');
+  setSt('Creating run…', 'sync-saving');
+  const { error } = await sb.from('runs').insert({ truck, driver, planned_date, notes, status: 'planned' });
+  setBtn('btn-add-run', false, 'Create run');
+  if (error) { setSt('Failed: ' + error.message, 'sync-err'); alert(error.message); return; }
+  closeModal('run');
+  ['new-run-driver','new-run-notes'].forEach(i => document.getElementById(i).value = '');
+  document.getElementById('new-run-date').value = '';
+  setSt('Run created ✓', 'sync-ok');
+  buildDropdowns();
+}
+
+async function dispatchRun(runId) {
+  if (!confirm('Dispatch this run? All queued moves will be set to Transit.')) return;
+  setSt('Dispatching run…', 'sync-saving');
+  const linkedMoves = MOVES.filter(m => m.run_id === runId && m.status === 'queued');
+  await Promise.all(linkedMoves.map(m =>
+    sb.from('moves').update({ status: 'transit', transit_at: new Date().toISOString() }).eq('id', m.id)
+  ));
+  const { error } = await sb.from('runs').update({ status: 'dispatched' }).eq('id', runId);
+  if (error) { setSt('Dispatch failed: ' + error.message, 'sync-err'); return; }
+  setSt('Run dispatched ✓', 'sync-ok');
+}
+
+async function completeRun(runId) {
+  if (!confirm('Complete this run? All remaining moves will be marked done and locations updated.')) return;
+  setSt('Completing run…', 'sync-saving');
+  const linkedMoves = MOVES.filter(m => m.run_id === runId && m.status !== 'complete');
+  for (const m of linkedMoves) {
+    const fn = m.kind === 'equipment' ? 'complete_equipment_move'
+             : m.kind === 'tool'      ? 'complete_tool_move'
+             :                          'complete_attachment_move';
+    const { error } = await sb.rpc(fn, { p_move_id: m.id });
+    if (error) { setSt('Failed on move ' + m.id + ': ' + error.message, 'sync-err'); return; }
+  }
+  const linkedAssets = ASSET_MOVES.filter(a => a.run_id === runId && a.status === 'dispatched');
+  await Promise.all(linkedAssets.map(a =>
+    sb.from('asset_moves').update({ status: 'delivered', delivered_at: new Date().toISOString() }).eq('id', a.id)
+  ));
+  const { error } = await sb.from('runs').update({ status: 'complete' }).eq('id', runId);
+  if (error) { setSt('Run complete update failed: ' + error.message, 'sync-err'); return; }
+  setSt('Run complete ✓', 'sync-ok');
+}
+
+async function deleteRun(runId) {
+  if (!confirm('Delete this run? Linked items will become standalone.')) return;
+  const { error } = await sb.from('runs').delete().eq('id', runId);
+  if (error) { setSt('Delete failed: ' + error.message, 'sync-err'); return; }
+  setSt('Run deleted ✓', 'sync-ok');
+}
+
+function renderRunStatusPills() {
+  const c = document.getElementById('run-status-pills');
+  if (!c) return;
+  const counts = {};
+  RUNS.forEach(r => { counts[r.status] = (counts[r.status] || 0) + 1; });
+  const statuses = ['planned', 'dispatched', 'complete'];
+  if (!statuses.some(s => counts[s])) { c.innerHTML = ''; return; }
+  const label = { planned: 'Planned', dispatched: 'Dispatched', complete: 'Complete' };
+  let html = `<button class="pill${!runStatusFilter ? ' active' : ''}" data-status="">All <span style="font-size:10px;opacity:.6">${RUNS.length}</span></button>`;
+  statuses.forEach(s => {
+    if (counts[s]) {
+      html += `<button class="pill${runStatusFilter === s ? ' active' : ''}" data-status="${esc(s)}">${label[s]} <span style="font-size:10px;opacity:.6">${counts[s]}</span></button>`;
+    }
+  });
+  c.innerHTML = html;
+  c.onclick = e => {
+    const btn = e.target.closest('button.pill');
+    if (!btn) return;
+    runStatusFilter = btn.dataset.status || null;
+    renderRunStatusPills(); renderRuns();
+  };
+}
+
+function renderRunDetail(runId) {
+  const items = getRunItems(runId, MOVES, BULK_TRANSFERS, ASSET_MOVES);
+  const parts = [];
+  if (items.moves.length) {
+    const rows = items.moves.map(m => {
+      const sc = m.status === 'complete' ? 'bg-done' : m.status === 'transit' ? 'bg-tr' : 'bg-q';
+      const kindBdg = m.kind === 'attachment' ? '<span class="bdg bg-attmove" style="font-size:9px">Att</span>'
+                    : m.kind === 'tool' ? '<span class="bdg bg-toolmove" style="font-size:9px">Tool</span>' : '';
+      return `<div style="font-size:11px;color:#555;padding:2px 0;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span class="bdg ${sc}" style="font-size:9px">${m.status}</span>
+        <span>${esc(m.item_name)}</span>
+        <span style="color:#aaa">${esc(m.from_loc || '?')} → ${esc(m.to_loc)}</span>
+        ${kindBdg}
+      </div>`;
+    }).join('');
+    parts.push(`<div style="font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Moves</div>${rows}`);
+  }
+  if (items.bulkTransfers.length) {
+    const rows = items.bulkTransfers.map(x => {
+      const sc = x.status === 'returned' ? 'bg-done' : x.status === 'partial' ? 'bg-tr' : 'bg-q';
+      return `<div style="font-size:11px;color:#555;padding:2px 0;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span class="bdg ${sc}" style="font-size:9px">${x.status}</span>
+        <span>${esc(x.item_name || '—')}</span>
+        <span style="color:#aaa">${x.qty_sent} → ${esc(x.to_site)}</span>
+      </div>`;
+    }).join('');
+    parts.push(`<div style="font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;margin-top:6px">Bulk Materials</div>${rows}`);
+  }
+  if (items.assetMoves.length) {
+    const rows = items.assetMoves.map(a => {
+      const sc = a.status === 'delivered' ? 'bg-done' : 'bg-tr';
+      return `<div style="font-size:11px;color:#555;padding:2px 0;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+        <span class="bdg ${sc}" style="font-size:9px">${a.status}</span>
+        <span>${esc(a.item_name || '—')}</span>
+        <span style="color:#aaa">${a.qty} pcs → ${esc(a.to_site)}</span>
+      </div>`;
+    }).join('');
+    parts.push(`<div style="font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;margin-top:6px">Assets</div>${rows}`);
+  }
+  if (!parts.length) return '<div style="font-size:11px;color:#bbb;font-style:italic">No items linked yet — add moves using "Add to run" in the other tabs</div>';
+  return `<div class="detail-box">${parts.join('')}</div>`;
+}
+
+function renderRuns() {
+  const list = document.getElementById('runs-list');
+  if (!list) return;
+  if (!RUNS.length) {
+    list.innerHTML = '<div class="empty-msg">No runs yet — plan your first run above</div>'; return;
+  }
+  const filtered = runStatusFilter ? RUNS.filter(r => r.status === runStatusFilter) : RUNS;
+  if (!filtered.length) {
+    list.innerHTML = '<div class="empty-msg">No runs with this status</div>'; return;
+  }
+  const statusCls = { planned: 'bg-q', dispatched: 'bg-tr', complete: 'bg-done' };
+  const statusLabel = { planned: 'Planned', dispatched: 'Dispatched', complete: 'Complete' };
+  list.innerHTML = filtered.map(r => {
+    const items = getRunItems(r.id, MOVES, BULK_TRANSFERS, ASSET_MOVES);
+    const itemCount = items.moves.length + items.bulkTransfers.length + items.assetMoves.length;
+    const sc = statusCls[r.status] || 'bg-gray';
+    const sl = statusLabel[r.status] || r.status;
+    const dateStr = r.planned_date
+      ? new Date(r.planned_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : 'No date';
+    const canDispatch = isRunDispatchable(r.id, MOVES, BULK_TRANSFERS, ASSET_MOVES);
+    const actionBtns = r.status === 'planned'
+      ? `<button class="btn-sm${canDispatch ? ' primary' : ''}" onclick="dispatchRun(${r.id})" ${!canDispatch ? 'disabled title="Add items first"' : ''}>Dispatch</button>`
+      : r.status === 'dispatched'
+      ? `<button class="btn-sm primary" onclick="completeRun(${r.id})">Complete Run</button>`
+      : '';
+    return `<div class="eq-card">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px">
+          <strong style="font-size:13px">${esc(r.truck || 'Unassigned truck')}</strong>
+          ${r.driver ? `<span style="font-size:11px;color:#888">/ ${esc(r.driver)}</span>` : ''}
+          <span class="bdg ${sc}" style="font-size:10px">${sl}</span>
+        </div>
+        <div style="font-size:11px;color:#555">${dateStr} · ${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
+        ${r.notes ? `<div style="font-size:11px;font-style:italic;color:#888;margin-top:2px">${esc(r.notes)}</div>` : ''}
+        <div style="margin-top:8px">${renderRunDetail(r.id)}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
+          ${actionBtns}
+          <button class="btn-sm" onclick="deleteRun(${r.id})" style="color:#c0392b;margin-left:auto">✕ Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
