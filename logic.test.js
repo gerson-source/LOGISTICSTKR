@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getRunItems, deriveRunStatus, isRunDispatchable, isRunComplete } from './logic.js';
+import { getRunItems, deriveRunStatus, isRunDispatchable, isRunComplete, checkRunMobConflicts } from './logic.js';
 
 // ── Shared fixture data ───────────────────────────────────────────────────────
 const moves = [
@@ -179,5 +179,58 @@ describe('isRunComplete', () => {
       { run_id: 44, status: 'transit' },
     ];
     expect(isRunComplete(44, m, [], [])).toBe(false);
+  });
+});
+
+// ── checkRunMobConflicts ──────────────────────────────────────────────────────
+describe('checkRunMobConflicts', () => {
+  const runs = [
+    { id: 1, truck: 'Pickup' },
+    { id: 2, truck: 'Lowboy' },
+    { id: 3, truck: null },
+  ];
+  const moves = [
+    { id: 1, run_id: 1, truck: 'Lowboy',  status: 'queued',   item_name: 'Excavator' },
+    { id: 2, run_id: 1, truck: 'Pickup',  status: 'queued',   item_name: 'Compactor' },
+    { id: 3, run_id: 2, truck: 'Lowboy',  status: 'queued',   item_name: 'Bulldozer' },
+    { id: 4, run_id: 1, truck: 'Lowboy',  status: 'complete', item_name: 'Old move' },
+    { id: 5, run_id: 1, truck: null,      status: 'queued',   item_name: 'Hand tools' },
+  ];
+
+  it('returns moves whose truck does not match the run truck', () => {
+    const result = checkRunMobConflicts(1, runs, moves);
+    expect(result).toHaveLength(1);
+    expect(result[0].item_name).toBe('Excavator');
+  });
+
+  it('does not flag moves whose truck matches the run truck', () => {
+    const result = checkRunMobConflicts(1, runs, moves);
+    expect(result.some(m => m.item_name === 'Compactor')).toBe(false);
+  });
+
+  it('ignores completed moves even if truck mismatches', () => {
+    const result = checkRunMobConflicts(1, runs, moves);
+    expect(result.some(m => m.id === 4)).toBe(false);
+  });
+
+  it('ignores moves with no truck set', () => {
+    const result = checkRunMobConflicts(1, runs, moves);
+    expect(result.some(m => m.id === 5)).toBe(false);
+  });
+
+  it('returns empty when run has no truck assigned', () => {
+    expect(checkRunMobConflicts(3, runs, moves)).toHaveLength(0);
+  });
+
+  it('returns empty when all moves match the run truck', () => {
+    expect(checkRunMobConflicts(2, runs, moves)).toHaveLength(0);
+  });
+
+  it('returns empty for an unknown run id', () => {
+    expect(checkRunMobConflicts(99, runs, moves)).toHaveLength(0);
+  });
+
+  it('returns empty when there are no moves', () => {
+    expect(checkRunMobConflicts(1, runs, [])).toHaveLength(0);
   });
 });

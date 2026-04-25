@@ -58,6 +58,27 @@ export function isRunDispatchable(runId, moves, bulkTransfers, assetMoves) {
 }
 
 /**
+ * Returns moves in a run whose required mobilization (move.truck) does not
+ * match the run's assigned truck type (run.truck). Skips completed moves and
+ * moves or runs with no truck value set.
+ *
+ * @param {number} runId
+ * @param {Object[]} runs
+ * @param {Object[]} moves
+ * @returns {Object[]} conflicting moves
+ */
+export function checkRunMobConflicts(runId, runs, moves) {
+  const run = runs.find(r => r.id === runId);
+  if (!run || !run.truck) return [];
+  return moves.filter(m =>
+    m.run_id === runId &&
+    m.truck &&
+    m.truck !== run.truck &&
+    m.status !== 'complete'
+  );
+}
+
+/**
  * Returns true when every item linked to the run is in a terminal state.
  * A run with zero items is never considered complete.
  */

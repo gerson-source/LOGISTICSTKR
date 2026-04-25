@@ -378,6 +378,7 @@ textarea{resize:vertical;min-height:60px}
               <div style="font-size:13px;font-weight:600" id="sn"></div>
               <div style="font-size:12px;color:#666;margin-top:2px" id="sl"></div>
               <div style="font-size:12px;color:#888;margin-top:1px" id="sm"></div>
+              <div style="font-size:12px;font-weight:500;color:var(--accent);margin-top:2px" id="sm-mob"></div>
               <div id="sa" style="margin-top:6px"></div>
             </div>
             <div id="aw" class="warn-box" style="display:none"></div>
@@ -804,10 +805,10 @@ textarea{resize:vertical;min-height:60px}
     <textarea id="new-oitems" placeholder="List items and quantities…"></textarea>
     <label>Load size</label>
     <select id="new-osize">
-      <option value="small">Small — fits in pickup truck</option>
-      <option value="medium" selected>Medium — needs trailer</option>
-      <option value="large">Large — flatbed / lowboy</option>
-      <option value="oversized">Oversized — special permit</option>
+      <option value="small">Small — light tools and materials</option>
+      <option value="medium" selected>Medium — standard pallet load</option>
+      <option value="large">Large — heavy equipment or machinery</option>
+      <option value="oversized">Oversized — special permit required</option>
     </select>
     <label>Truck</label>
     <select id="new-otruck"><option value="">— select truck —</option></select>
@@ -1019,6 +1020,16 @@ function isRunComplete(runId, moves, bulkTransfers, assetMoves) {
     items.moves.every(m => m.status === 'complete') &&
     items.bulkTransfers.every(x => x.status === 'returned') &&
     items.assetMoves.every(a => a.status === 'delivered')
+  );
+}
+function checkRunMobConflicts(runId, runs, moves) {
+  const run = runs.find(r => r.id === runId);
+  if (!run || !run.truck) return [];
+  return moves.filter(m =>
+    m.run_id === runId &&
+    m.truck &&
+    m.truck !== run.truck &&
+    m.status !== 'complete'
   );
 }
 
@@ -1520,7 +1531,8 @@ function showEqDetail(id) {
     detail.style.display = 'block';
     document.getElementById('sn').textContent = eq.name;
     document.getElementById('sl').textContent = 'At: ' + eq.loc;
-    document.getElementById('sm').textContent = [eq.type, eq.truck].filter(Boolean).join(' · ');
+    document.getElementById('sm').textContent = eq.type || '';
+    document.getElementById('sm-mob').textContent = eq.truck ? '🚛 Requires: ' + eq.truck : '';
     const atts = getAtts(eq.id);
     document.getElementById('sa').innerHTML = atts.length
       ? atts.map(a => `<span class="att-pill">${esc(a.name)}</span>`).join('') : '';
@@ -1566,6 +1578,15 @@ async function queueMove() {
   setBtn('btn-queue-eq', true, 'Queueing…');
   setSt('Queueing move…', 'sync-saving');
   const runId = parseInt(document.getElementById('eq-run-id').value) || null;
+  if (runId && eq.truck) {
+    const run = RUNS.find(r => r.id === runId);
+    if (run && run.truck && run.truck !== eq.truck) {
+      const ok = confirm(
+        `Mobilization mismatch: "${eq.name}" requires ${eq.truck} but this run is assigned ${run.truck}. Add anyway?`
+      );
+      if (!ok) { setBtn('btn-queue-eq', false, 'Queue move'); return; }
+    }
+  }
   const { error } = await sb.from('moves').insert({
     kind: 'equipment',
     item_id: eq.id, item_name: eq.name, item_type: eq.type, truck: eq.truck,
@@ -2111,7 +2132,7 @@ function renderOrders() {
     if (p === 'high') return 'background:#FAEEDA;color:#633806';
     return '';
   };
-  const sizeLabel = { small: 'Small load', large: 'Large load', oversized: 'Oversized' };
+  const sizeLabel = { small: 'Small load', large: 'Large / machinery', oversized: 'Oversized' };
   const sizeCls = { small: 'bg-gray', large: 'bg-tr', oversized: '' };
   const sizeStyle = { oversized: 'background:#FECACA;color:#991B1B' };
   const sourceLabel = s => {
@@ -2659,17 +2680,21 @@ function renderRunStatusPills() {
 
 function renderRunDetail(runId) {
   const items = getRunItems(runId, MOVES, BULK_TRANSFERS, ASSET_MOVES);
+  const conflicts = new Set(checkRunMobConflicts(runId, RUNS, MOVES).map(m => m.id));
   const parts = [];
   if (items.moves.length) {
     const rows = items.moves.map(m => {
       const sc = m.status === 'complete' ? 'bg-done' : m.status === 'transit' ? 'bg-tr' : 'bg-q';
       const kindBdg = m.kind === 'attachment' ? '<span class="bdg bg-attmove" style="font-size:9px">Att</span>'
                     : m.kind === 'tool' ? '<span class="bdg bg-toolmove" style="font-size:9px">Tool</span>' : '';
+      const mobWarn = conflicts.has(m.id)
+        ? `<span class="bdg" style="font-size:9px;background:#FECACA;color:#991B1B" title="Requires ${esc(m.truck||'?')}">⚠ ${esc(m.truck||'?')}</span>`
+        : '';
       return `<div style="font-size:11px;color:#555;padding:2px 0;display:flex;align-items:center;gap:4px;flex-wrap:wrap">
         <span class="bdg ${sc}" style="font-size:9px">${m.status}</span>
         <span>${esc(m.item_name)}</span>
         <span style="color:#aaa">${esc(m.from_loc || '?')} → ${esc(m.to_loc)}</span>
-        ${kindBdg}
+        ${kindBdg}${mobWarn}
       </div>`;
     }).join('');
     parts.push(`<div style="font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px">Moves</div>${rows}`);
@@ -2721,6 +2746,7 @@ function renderRuns() {
       ? new Date(r.planned_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       : 'No date';
     const canDispatch = isRunDispatchable(r.id, MOVES, BULK_TRANSFERS, ASSET_MOVES);
+    const mobConflicts = checkRunMobConflicts(r.id, RUNS, MOVES);
     const actionBtns = r.status === 'planned'
       ? `<button class="btn-sm${canDispatch ? ' primary' : ''}" onclick="dispatchRun(${r.id})" ${!canDispatch ? 'disabled title="Add items first"' : ''}>Dispatch</button>`
       : r.status === 'dispatched'
@@ -2734,6 +2760,7 @@ function renderRuns() {
           <span class="bdg ${sc}" style="font-size:10px">${sl}</span>
         </div>
         <div style="font-size:11px;color:#555">${dateStr} · ${itemCount} item${itemCount !== 1 ? 's' : ''}</div>
+        ${mobConflicts.length ? `<div style="font-size:11px;color:#c0392b;margin-top:2px">⚠ ${mobConflicts.length} mobilization mismatch${mobConflicts.length !== 1 ? 'es' : ''}</div>` : ''}
         ${r.notes ? `<div style="font-size:11px;font-style:italic;color:#888;margin-top:2px">${esc(r.notes)}</div>` : ''}
         <div style="margin-top:8px">${renderRunDetail(r.id)}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:8px">
